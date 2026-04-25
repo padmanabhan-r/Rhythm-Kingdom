@@ -120,7 +120,7 @@ class UIScene extends Phaser.Scene {
     }).setDepth(5).setScrollFactor(0);
 
     ALL_ACTIONS.forEach((action, i) => {
-      const x = 22 + i * 46;
+      const x = 28 + i * 68;
       const unlockedKey = 'action_' + action.toLowerCase();
       const lockedKey   = 'action_' + action.toLowerCase() + '_locked';
       const col = RK.ACTION_COLORS[action] || 0x888888;
@@ -135,8 +135,8 @@ class UIScene extends Phaser.Scene {
       }).setOrigin(0.5).setDepth(6).setScrollFactor(0);
 
       // Action name
-      const lbl = this.add.text(x, 49, action.slice(0, 3), {
-        fontSize: '6px', color: '#886633', fontFamily: 'monospace',
+      const lbl = this.add.text(x, 50, action, {
+        fontSize: '7px', color: '#ccaa55', fontFamily: 'monospace', fontStyle: 'bold',
       }).setOrigin(0.5).setDepth(5).setScrollFactor(0);
 
       this._runeIconObjs.push({ action, icon, lockBadge, lbl, unlockedKey, lockedKey, col });
@@ -156,7 +156,7 @@ class UIScene extends Phaser.Scene {
       } else {
         icon.setTexture(lockedKey).setAlpha(0.55).setTint(0x888888);
         lockBadge.setVisible(true);
-        lbl.setStyle({ color: '#664422' });
+        lbl.setStyle({ color: '#998844' });
       }
     });
   }
@@ -420,15 +420,15 @@ class UIScene extends Phaser.Scene {
   _beatScreenPulse(beatIndex) {
     if (!this._pulseRect) {
       this._pulseRect = this.add.rectangle(
-        RK.WIDTH / 2, RK.HEIGHT / 2, RK.WIDTH, RK.HEIGHT, 0xffffff, 0
-      ).setDepth(10).setScrollFactor(0);
+        RK.WIDTH / 2, RK.HEIGHT / 2, RK.WIDTH, RK.HEIGHT, 0xffffff
+      ).setDepth(10).setScrollFactor(0).setAlpha(0);
     }
     const cols = [0xffffff, 0xff2222, 0xffee22, 0x22ff44];
-    const col  = cols[beatIndex % 4];
-    this._pulseRect.setFillStyle(col, 0.1);
     this.tweens.killTweensOf(this._pulseRect);
+    this._pulseRect.setFillStyle(cols[beatIndex % 4], 1);
+    this._pulseRect.setAlpha(0.13);
     this.tweens.add({
-      targets: this._pulseRect, fillAlpha: 0, duration: 220, ease: 'Sine.easeOut',
+      targets: this._pulseRect, alpha: 0, duration: 220, ease: 'Sine.easeOut',
     });
   }
 
@@ -470,6 +470,7 @@ class UIScene extends Phaser.Scene {
   _onPlayerDead() {
     this._movePlayhead(0);
     this.currentBeat = 0;
+    this._updateWellVisuals();
   }
 
   _onLevelComplete() {

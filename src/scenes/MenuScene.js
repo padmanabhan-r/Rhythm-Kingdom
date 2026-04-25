@@ -236,7 +236,7 @@ class MenuScene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(10);
 
     const controls = [
-      ['A / D',      'move gorilla'],
+      ['A / D',      'move monkey'],
       ['CLICK WELL', 'set beat action'],
       ['ON BEAT',    'action fires!'],
     ];

@@ -83,18 +83,14 @@ window.RK.BootTextures = {
           g.fillStyle(color); g.fillTriangle(40, 18, 50, 12, 46, 26);
           break;
         case 'coconut':
-          // Crescent + arc throw rune
-          g.fillCircle(16, 32, 12);
-          g.fillStyle(0x0d1810); g.fillCircle(21, 28, 10);
-          g.fillStyle(color);
-          // Arc trajectory dots
-          for (let t = 0; t <= 1; t += 0.12) {
-            const x = 20 + t * 22;
-            const y = 38 - t * 22 + t * (1 - t) * (-14);
-            g.fillCircle(x, y, 2.5);
-          }
-          // Impact dot
-          g.fillCircle(42, 14, 5);
+          // Coconut — round, brown, with dark spots
+          g.fillStyle(0x5a3810); g.fillCircle(28, 28, 18);
+          g.fillStyle(0x7a4e18); g.fillCircle(26, 26, 14);
+          g.fillStyle(0x9a6628); g.fillCircle(24, 24, 9);
+          // Three dark eyes like real coconut
+          g.fillStyle(0x1a0c00); g.fillCircle(28, 22, 3); g.fillCircle(22, 30, 2.5); g.fillCircle(34, 30, 2.5);
+          // Highlight
+          g.fillStyle(0xcc8833, 0.6); g.fillCircle(22, 22, 4);
           break;
       }
       g.generateTexture(key, 56, 56);

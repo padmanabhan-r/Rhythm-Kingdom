@@ -14,6 +14,7 @@ class GameScene extends Phaser.Scene {
     this._checkpointY     = null;
     this._activeBeatCount = RK.BEAT_COUNT;
     this._bananaCount     = 0;
+    this._killCount       = 0;
     this._enemyDeath      = false;
   }
 
@@ -162,9 +163,14 @@ class GameScene extends Phaser.Scene {
       fontSize: '8px', color: '#334444', fontFamily: 'monospace',
     }).setDepth(10).setScrollFactor(0);
 
-    this._bananaTxt = this.add.text(6, 8, 'B x0', {
+    this._bananaTxt = this.add.text(6, RK.UI_HEIGHT + 6, 'Fruits: 0', {
       fontSize: '10px', color: '#ffee22', fontFamily: 'monospace',
-      backgroundColor: '#00000066', padding: { x: 4, y: 2 },
+      backgroundColor: '#00000088', padding: { x: 4, y: 2 },
+    }).setDepth(10).setScrollFactor(0);
+
+    this._killTxt = this.add.text(6, RK.UI_HEIGHT + 24, 'Kills: 0', {
+      fontSize: '10px', color: '#ff6644', fontFamily: 'monospace',
+      backgroundColor: '#00000088', padding: { x: 4, y: 2 },
     }).setDepth(10).setScrollFactor(0);
   }
 
@@ -326,7 +332,7 @@ _onPlayerLand(data) { this._gameFeel.dustBurst(data.x, data.y + 14); }
         this._rhythmClock.start();
       });
     } else {
-      this.add.text(RK.WIDTH / 2, RK.PLAY_HEIGHT / 2, 'Gone…', {
+      this.add.text(RK.WIDTH / 2, RK.PLAY_HEIGHT / 2, 'Lost the Rhythm…', {
         fontSize: '28px', color: '#ff4444', fontFamily: 'monospace',
         stroke: '#660000', strokeThickness: 4,
       }).setOrigin(0.5).setDepth(30).setScrollFactor(0);
@@ -352,6 +358,7 @@ _onPlayerLand(data) { this._gameFeel.dustBurst(data.x, data.y + 14); }
     if (this.player.isRolling && enemy.canRoll()) {
       enemy.die();
       this._gameFeel.dustBurst(enemy.x, enemy.y);
+      this._addKill();
       return;
     }
     if (this.player.invincible) return;
@@ -360,12 +367,17 @@ _onPlayerLand(data) { this._gameFeel.dustBurst(data.x, data.y + 14); }
     this.player.die();
   }
 
+  _addKill() {
+    this._killCount++;
+    if (this._killTxt) this._killTxt.setText('Kills: ' + this._killCount);
+  }
+
   _collectBanana(banana) {
     if (!banana || !banana.active) return;
     banana.setActive(false).setVisible(false);
     if (banana.body) banana.body.enable = false;
     this._bananaCount++;
-    if (this._bananaTxt) this._bananaTxt.setText('B x' + this._bananaCount);
+    if (this._bananaTxt) this._bananaTxt.setText('Fruits: ' + this._bananaCount);
     this._gameFeel.impactSpark(banana.x, banana.y);
     this.time.delayedCall(16, () => { if (banana) banana.destroy(); });
   }
@@ -394,6 +406,7 @@ _onPlayerLand(data) { this._gameFeel.dustBurst(data.x, data.y + 14); }
       enemy.die();
       this._audio.play('coconut_impact', 0.7);
       this._gameFeel.dustBurst(enemy.x, enemy.y);
+      this._addKill();
     }
   }
 

@@ -37,30 +37,17 @@ window.RK.GameSceneBuilder = {
       }
       if (p.type === 'gate') {
         const wx = p.x, wallW = p.w, floorY = p.y;
-        // Tall stone pillar visuals — full height to sky
-        gfx.fillStyle(0x2a2015); gfx.fillRect(wx, 0, 26, floorY);
-        gfx.fillStyle(0x3a2e1a); gfx.fillRect(wx, 0, 24, floorY);
-        gfx.fillStyle(0x4a3c26); gfx.fillRect(wx + 2, 0, 20, floorY - 2);
-        gfx.fillStyle(0x2a2015); gfx.fillRect(wx + 5, 472, 16, 3);
-        gfx.fillRect(wx + 5, 490, 16, 3);
-        gfx.fillRect(wx + 5, 440, 16, 3); gfx.fillRect(wx + 5, 400, 16, 3);
-        gfx.fillStyle(0x2a2015); gfx.fillRect(wx + wallW - 26, 0, 26, floorY);
-        gfx.fillStyle(0x3a2e1a); gfx.fillRect(wx + wallW - 26, 0, 24, floorY);
-        gfx.fillStyle(0x4a3c26); gfx.fillRect(wx + wallW - 24, 0, 20, floorY - 2);
-        gfx.fillStyle(0x2a2015); gfx.fillRect(wx + wallW - 21, 472, 16, 3);
-        gfx.fillRect(wx + wallW - 21, 490, 16, 3);
-        gfx.fillRect(wx + wallW - 21, 440, 16, 3); gfx.fillRect(wx + wallW - 21, 400, 16, 3);
-        // Lintel arch at passage level
-        gfx.fillStyle(0x3a2e1a); gfx.fillRect(wx, 474, wallW, 6);
-        gfx.fillStyle(0x4a3c26); gfx.fillRect(wx + 3, 475, wallW - 6, 4);
-        gfx.fillStyle(0xcc9933, 0.5); gfx.fillRect(wx + wallW / 2 - 24, 475, 48, 2);
-        gfx.fillStyle(0x2a2015); gfx.fillEllipse(wx + wallW / 2, 480, 50, 10);
-        // Physics: tall walls (y=0-476) — standing blocked (top=462<476), rolling passes (top=480>476)
-        // Two pillars only — no ceiling block, player walks through freely
+        // Tall stone pillar — stops 22px above floor, leaving roll gap
+        const pillarH = floorY - 22;
+        gfx.fillStyle(0x2a2015); gfx.fillRect(wx, 0, 26, pillarH);
+        gfx.fillStyle(0x3a2e1a); gfx.fillRect(wx, 0, 24, pillarH);
+        gfx.fillStyle(0x4a3c26); gfx.fillRect(wx + 2, 0, 20, pillarH - 2);
+        gfx.fillStyle(0x2a2015); gfx.fillRect(wx + 5, pillarH - 26, 16, 3);
+        gfx.fillRect(wx + 5, pillarH - 8,  16, 3);
+        gfx.fillRect(wx + 5, pillarH - 58, 16, 3);
+        // Single pillar only
         const lPillar = scene.wallGroup.create(wx + 13, 238, 'px');
         lPillar.setDisplaySize(26, 476).setAlpha(0).refreshBody();
-        const rPillar = scene.wallGroup.create(wx + wallW - 13, 238, 'px');
-        rPillar.setDisplaySize(26, 476).setAlpha(0).refreshBody();
         return;
       }
       // Jungle platform: moss top + carved stone base

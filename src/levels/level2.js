@@ -21,7 +21,7 @@ window.RK.Levels.level2 = {
     { x: 1100, y: 300, w: 200, type: 'jungle' },
     { x: 1400, y: 380, w: 600, type: 'jungle' },
     { x: 1800, y: 320, w: 400, type: 'jungle' },
-    { x: 2100, y: 380, w: 300, type: 'jungle' },
+    { x: 2000, y: 380, w: 400, type: 'jungle' },
   ],
 
   thorns: [
@@ -49,7 +49,7 @@ window.RK.Levels.level2 = {
     { x: 1150, y: 275 }, { x: 1180, y: 275 },
     { x: 1500, y: 355 }, { x: 1540, y: 355 },
     { x: 1850, y: 295 }, { x: 1880, y: 295 },
-    { x: 2140, y: 355 }, { x: 2180, y: 355 },
+    { x: 2040, y: 355 }, { x: 2080, y: 355 },
   ],
 
   exit: { x: 2360, y: 360 },
