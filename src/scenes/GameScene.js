@@ -33,6 +33,7 @@ class GameScene extends Phaser.Scene {
     this.ceilingGroup    = this.physics.add.staticGroup();
     this.thornGroup      = this.physics.add.staticGroup();
     this.wallGroup       = this.physics.add.staticGroup();
+    this.waterGroup      = this.physics.add.staticGroup();
     this.enemyGroup      = this.add.group();
     this.pickupGroup     = this.add.group();
     this.coconutGroup    = this.add.group();
@@ -40,6 +41,7 @@ class GameScene extends Phaser.Scene {
 
     RK.GameSceneBuilder.buildPlatforms(this, ld);
     RK.GameSceneBuilder.buildThorns(this, ld);
+    RK.GameSceneBuilder.buildWater(this, ld);
     RK.GameSceneBuilder.buildEnemies(this, ld);
     RK.GameSceneBuilder.buildPickups(this, ld);
     RK.GameSceneBuilder.buildCheckpoints(this, ld);
@@ -168,6 +170,7 @@ class GameScene extends Phaser.Scene {
     this.physics.add.collider(this.coconutGroup, this.platformGroup, (c) => { if (c.alive) c.die(); });
 
     this.physics.add.overlap(this.player, this.thornGroup,     () => this._playerHitThorn());
+    this.physics.add.overlap(this.player, this.waterGroup,     () => { if (!this.player.dead) this.player.die(); });
     this.physics.add.overlap(this.player, this.enemyGroup,     (p, e) => this._playerHitEnemy(e));
     this.physics.add.overlap(this.player, this.pickupGroup,    (p, pk) => this._playerPickup(pk));
     this.physics.add.overlap(this.player, this.exitZone,       () => this._completeLevel());
@@ -212,6 +215,8 @@ class GameScene extends Phaser.Scene {
         spr.tilePositionX = sx * this._plxFactors[i];
       });
     }
+    // Water animation
+    if (this._waterTiles) this._waterTiles.forEach(t => { t.tilePositionX += 0.4; });
 
     if (!this.player.dead) {
       this.player.update(delta, this.cursors);

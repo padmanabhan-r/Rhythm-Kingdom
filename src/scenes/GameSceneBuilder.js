@@ -36,25 +36,32 @@ window.RK.GameSceneBuilder = {
         return;
       }
       if (p.type === 'gate') {
-        const wx = p.x, wallW = p.w, floorY = p.y, archTop = 480;
-        gfx.fillStyle(0x3a2e1a); gfx.fillRect(wx, 462, 26, floorY - 462);
-        gfx.fillStyle(0x4a3c26); gfx.fillRect(wx + 2, 464, 22, floorY - 464);
+        const wx = p.x, wallW = p.w, floorY = p.y;
+        // Tall stone pillar visuals — full height to sky
+        gfx.fillStyle(0x2a2015); gfx.fillRect(wx, 0, 26, floorY);
+        gfx.fillStyle(0x3a2e1a); gfx.fillRect(wx, 0, 24, floorY);
+        gfx.fillStyle(0x4a3c26); gfx.fillRect(wx + 2, 0, 20, floorY - 2);
         gfx.fillStyle(0x2a2015); gfx.fillRect(wx + 5, 472, 16, 3);
         gfx.fillRect(wx + 5, 490, 16, 3);
-        gfx.fillStyle(0x3a2e1a); gfx.fillRect(wx + wallW - 26, 462, 26, floorY - 462);
-        gfx.fillStyle(0x4a3c26); gfx.fillRect(wx + wallW - 24, 464, 22, floorY - 464);
+        gfx.fillRect(wx + 5, 440, 16, 3); gfx.fillRect(wx + 5, 400, 16, 3);
+        gfx.fillStyle(0x2a2015); gfx.fillRect(wx + wallW - 26, 0, 26, floorY);
+        gfx.fillStyle(0x3a2e1a); gfx.fillRect(wx + wallW - 26, 0, 24, floorY);
+        gfx.fillStyle(0x4a3c26); gfx.fillRect(wx + wallW - 24, 0, 20, floorY - 2);
         gfx.fillStyle(0x2a2015); gfx.fillRect(wx + wallW - 21, 472, 16, 3);
         gfx.fillRect(wx + wallW - 21, 490, 16, 3);
-        gfx.fillStyle(0x3a2e1a); gfx.fillRect(wx, 450, wallW, 14);
-        gfx.fillStyle(0x4a3c26); gfx.fillRect(wx + 3, 452, wallW - 6, 10);
-        gfx.fillStyle(0xcc9933, 0.5); gfx.fillRect(wx + wallW / 2 - 24, 454, 48, 4);
+        gfx.fillRect(wx + wallW - 21, 440, 16, 3); gfx.fillRect(wx + wallW - 21, 400, 16, 3);
+        // Lintel arch at passage level
+        gfx.fillStyle(0x3a2e1a); gfx.fillRect(wx, 474, wallW, 6);
+        gfx.fillStyle(0x4a3c26); gfx.fillRect(wx + 3, 475, wallW - 6, 4);
+        gfx.fillStyle(0xcc9933, 0.5); gfx.fillRect(wx + wallW / 2 - 24, 475, 48, 2);
         gfx.fillStyle(0x2a2015); gfx.fillEllipse(wx + wallW / 2, 480, 50, 10);
-        const lPillar = scene.wallGroup.create(wx + 13, (462 + floorY) / 2, 'px');
-        lPillar.setDisplaySize(26, floorY - 462).setAlpha(0).refreshBody();
-        const rPillar = scene.wallGroup.create(wx + wallW - 13, (462 + floorY) / 2, 'px');
-        rPillar.setDisplaySize(26, floorY - 462).setAlpha(0).refreshBody();
-        const lintel = scene.wallGroup.create(wx + wallW / 2, 457, 'px');
-        lintel.setDisplaySize(wallW, 14).setAlpha(0).refreshBody();
+        // Physics: tall walls (y=0-476) — standing blocked (top=462<476), rolling passes (top=480>476)
+        const lPillar = scene.wallGroup.create(wx + 13, 238, 'px');
+        lPillar.setDisplaySize(26, 476).setAlpha(0).refreshBody();
+        const rPillar = scene.wallGroup.create(wx + wallW - 13, 238, 'px');
+        rPillar.setDisplaySize(26, 476).setAlpha(0).refreshBody();
+        const pBlock = scene.ceilingGroup.create(wx + wallW / 2, 238, 'px');
+        pBlock.setDisplaySize(wallW - 52, 476).setAlpha(0).refreshBody();
         return;
       }
       // Jungle platform: moss top + carved stone base
@@ -75,13 +82,36 @@ window.RK.GameSceneBuilder = {
 
   buildThorns(scene, ld) {
     const thorns = ld.thorns || ld.spikes || [];
+    const hasImg = scene.textures.exists('jungle_trap');
     thorns.forEach(s => {
-      const gfx = scene.add.graphics().setDepth(1);
-      gfx.fillStyle(0x1a5c18); gfx.fillTriangle(s.x + 8, s.y, s.x, s.y + 20, s.x + 16, s.y + 20);
-      gfx.fillStyle(0x228822); gfx.fillTriangle(s.x + 8, s.y + 3, s.x + 2, s.y + 20, s.x + 14, s.y + 20);
-      gfx.fillStyle(0x44cc44); gfx.fillRect(s.x + 7, s.y + 3, 2, 5);
+      if (hasImg) {
+        scene.add.image(s.x + 8, s.y + 8, 'jungle_trap').setDepth(1).setScale(1);
+      } else {
+        const gfx = scene.add.graphics().setDepth(1);
+        gfx.fillStyle(0x1a5c18); gfx.fillTriangle(s.x + 8, s.y, s.x, s.y + 20, s.x + 16, s.y + 20);
+        gfx.fillStyle(0x228822); gfx.fillTriangle(s.x + 8, s.y + 3, s.x + 2, s.y + 20, s.x + 14, s.y + 20);
+        gfx.fillStyle(0x44cc44); gfx.fillRect(s.x + 7, s.y + 3, 2, 5);
+      }
       const body = scene.thornGroup.create(s.x + 8, s.y + 10, 'px');
       body.setDisplaySize(12, 16).setAlpha(0).refreshBody();
+    });
+  },
+
+  buildWater(scene, ld) {
+    (ld.water || []).forEach(w => {
+      const gfx = scene.add.graphics().setDepth(0);
+      gfx.fillStyle(0x0a3d5c); gfx.fillRect(w.x, w.y, w.w, w.h);
+      gfx.fillStyle(0x1a6688); gfx.fillRect(w.x, w.y, w.w, 18);
+      gfx.fillStyle(0x22aacc, 0.7); gfx.fillRect(w.x, w.y, w.w, 7);
+      gfx.fillStyle(0x66eeff, 0.35); gfx.fillRect(w.x + 4, w.y + 2, w.w - 8, 4);
+      if (scene.textures.exists('water_tile')) {
+        const spr = scene.add.tileSprite(w.x, w.y, w.w, 16, 'water_tile')
+          .setOrigin(0, 0).setDepth(1).setAlpha(0.85);
+        scene._waterTiles = scene._waterTiles || [];
+        scene._waterTiles.push(spr);
+      }
+      const body = scene.waterGroup.create(w.x + w.w / 2, w.y + w.h / 2, 'px');
+      body.setDisplaySize(w.w, w.h).setAlpha(0).refreshBody();
     });
   },
 

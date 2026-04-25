@@ -21,6 +21,10 @@ class BootScene extends Phaser.Scene {
 
     // Hanging vine decoration
     this.load.image('vine_hang', 'assets-packs/haning-vines.png');
+
+    // Hazard + trap tiles
+    this.load.image('water_tile',  'assets-packs/JungleAssets/Water/WaterTile1.png');
+    this.load.image('jungle_trap', 'assets-packs/JungleAssets/Trap/JungleTrap1.png');
   }
 
   create() {
