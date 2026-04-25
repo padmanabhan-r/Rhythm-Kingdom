@@ -1,0 +1,74 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+*.egg
+dist/
+build/
+*.whl
+venv/
+.venv/
+env/
+.env
+.env.*
+!.env.example
+
+# pytest
+.pytest_cache/
+.hypothesis/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.*/
+.DS_Store
+
+# Node / Electron / React
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+studio/.next/
+*.tsbuildinfo
+
+# Audio files generated during sessions
+*.mp3
+*.wav
+*.ogg
+*.flac
+!hub/assets/*.mp3
+
+
+# Database
+*.sqlite3
+*.db
+
+# OS
+Thumbs.db
+.DS_Store
+Desktop.ini
+
+# ElevenLabs reference docs (large, local-only)
+docs/elevenlabs-docs/
+
+# Secrets
+*.pem
+*.key
+credentials.json
+misc/
+/*.md
+!README.md
+!architecture.md
+!CHANGELOG.md
+# Local Netlify folder
+.netlify
+docs/
