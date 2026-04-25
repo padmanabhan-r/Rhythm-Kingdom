@@ -1,6 +1,6 @@
 // =============================================================================
 //  Rhythm Kingdom — MenuScene.js
-//  Jungle night title screen. Moonlit atmosphere, fireflies, gorilla silhouette.
+//  Jungle night title screen. Gorilla dances live at 120 BPM.
 // =============================================================================
 
 class MenuScene extends Phaser.Scene {
@@ -8,172 +8,327 @@ class MenuScene extends Phaser.Scene {
 
   create() {
     const W = RK.WIDTH, H = RK.HEIGHT;
-    const bg = this.add.graphics();
 
-    // Deep jungle night sky — gradient bands
-    const bands = [
-      [0,   80,  0x020d06],
-      [80,  200, 0x051a0e],
-      [200, 340, 0x0a2a18],
-      [340, 480, 0x0d2318],
-    ];
-    bands.forEach(([y1, y2, col]) => { bg.fillStyle(col); bg.fillRect(0, y1, W, y2 - y1); });
-    // UI panel area
-    bg.fillStyle(0x1a140e); bg.fillRect(0, 480, W, H - 480);
-    bg.fillStyle(0xcc9933); bg.fillRect(0, 480, W, 2);
+    this._buildBg(W, H);
+    this._buildFireflies(W);
+    this._buildSpotlight(W);
+    this._buildTitle(W);
+    this._buildGorilla(W);
+    this._buildBottomBar(W);
 
-    // Moon
-    bg.fillStyle(0xeeffee, 0.12); bg.fillCircle(620, 60, 90);
-    bg.fillStyle(0xeeffee, 0.18); bg.fillCircle(620, 60, 55);
-    bg.fillStyle(0xeeffee, 0.7);  bg.fillCircle(620, 60, 38);
-    // Moon light shaft
-    bg.fillStyle(0xaaffcc, 0.04); bg.fillTriangle(540, 60, 700, 60, 560, 480);
+    // Start music on first interaction — browser blocks autoplay before gesture
+    this.input.once('pointerdown', () => this._startMenuMusic());
+    this.input.keyboard.once('keydown', () => this._startMenuMusic());
 
-    // Distant jungle canopy silhouette
-    bg.fillStyle(0x0a2318);
-    [50, 140, 240, 360, 480, 600, 700, 790].forEach((cx, i) => {
-      const h = 100 + (i % 3) * 40;
-      bg.fillEllipse(cx, 380 - h / 2, 90, h);
-    });
-
-    // Mid-distance tree trunks
-    bg.fillStyle(0x061408);
-    [40, 170, 320, 460, 590, 730].forEach(tx => {
-      bg.fillRect(tx, 300, 6, 200);
-    });
-
-    // Ground mist
-    bg.fillStyle(0x0d2318, 0.8); bg.fillRect(0, 430, W, 50);
-    bg.fillStyle(0x0a1a10, 0.6); bg.fillRect(0, 450, W, 30);
-
-    // Ground
-    bg.fillStyle(0x1a4a22); bg.fillRect(0, 454, W, 26);
-    bg.fillStyle(0x0d2318); bg.fillRect(0, 466, W, 14);
-
-    // Foreground root shapes
-    bg.fillStyle(0x0a2010);
-    bg.fillRect(0, 440, 60, 40); bg.fillRect(720, 440, 80, 40);
-    bg.fillTriangle(0, 440, 50, 440, 0, 480);
-    bg.fillTriangle(800, 440, 750, 440, 800, 480);
-
-    // Gorilla silhouette (bottom right, dark)
-    bg.fillStyle(0x0a1808);
-    bg.fillCircle(740, 450, 16); bg.fillEllipse(740, 468, 28, 22);
-    bg.fillEllipse(728, 462, 8, 14); bg.fillEllipse(752, 462, 8, 14);
-
-    // ---- Fireflies (animated dots) ----
-    this._fireflies = [];
-    for (let i = 0; i < 12; i++) {
-      const ff = this.add.circle(
-        80 + Math.random() * 640,
-        100 + Math.random() * 300,
-        2, 0x88ffaa
-      );
-      this.tweens.add({
-        targets: ff,
-        x: ff.x + (Math.random() - 0.5) * 120,
-        y: ff.y + (Math.random() - 0.5) * 80,
-        alpha: { from: 0.8, to: 0.1 },
-        duration: 1200 + Math.random() * 1800,
-        ease: 'Sine.easeInOut',
-        yoyo: true, repeat: -1,
-        delay: Math.random() * 2000,
-      });
-      this._fireflies.push(ff);
-    }
-
-    // ---- Title ----
-    const titleBg = this.add.graphics();
-    titleBg.fillStyle(0x000000, 0.55);
-    titleBg.fillRoundedRect(W / 2 - 230, 80, 460, 130, 8);
-    titleBg.lineStyle(2, 0xcc9933);
-    titleBg.strokeRoundedRect(W / 2 - 230, 80, 460, 130, 8);
-    titleBg.lineStyle(1, 0x44ffaa, 0.4);
-    titleBg.strokeRoundedRect(W / 2 - 226, 84, 452, 122, 6);
-
-    const t1 = this.add.text(W / 2, 108, 'RHYTHM', {
-      fontSize: '44px', color: '#ffcc44', fontFamily: 'monospace',
-      fontStyle: 'bold', stroke: '#885500', strokeThickness: 5,
-    }).setOrigin(0.5);
-
-    const t2 = this.add.text(W / 2, 160, 'KINGDOM', {
-      fontSize: '36px', color: '#44ffaa', fontFamily: 'monospace',
-      fontStyle: 'bold', stroke: '#005533', strokeThickness: 4,
-    }).setOrigin(0.5);
-
-    const tagline = this.add.text(W / 2, 198, "A Gorilla's Journey", {
-      fontSize: '13px', color: '#cc8833', fontFamily: 'monospace', fontStyle: 'italic',
-    }).setOrigin(0.5);
-
-    this.tweens.add({
-      targets: [t1, t2, tagline, titleBg],
-      y: '-=6', duration: 1800,
-      ease: 'Sine.easeInOut', yoyo: true, repeat: -1,
-    });
-
-    // ---- Controls panel ----
-    const panelY = 240;
-    const panelBg = this.add.graphics();
-    panelBg.fillStyle(0x0d1a0e, 0.88);
-    panelBg.fillRoundedRect(W / 2 - 220, panelY, 440, 130, 6);
-    panelBg.lineStyle(1, 0x2a4a30);
-    panelBg.strokeRoundedRect(W / 2 - 220, panelY, 440, 130, 6);
-
-    this.add.text(W / 2, panelY + 14, '— HOW TO PLAY —', {
-      fontSize: '10px', color: '#44ffaa', fontFamily: 'monospace',
-    }).setOrigin(0.5);
-
-    const controls = [
-      ['A / D',        'Move the gorilla'],
-      ['Click a well', 'Cycle action in beat slot'],
-      ['Right-click',  'Clear a slot'],
-      ['Beat fires!',  'Actions execute on rhythm'],
-    ];
-    controls.forEach(([key, desc], i) => {
-      const cy = panelY + 36 + i * 22;
-      this.add.text(W / 2 - 12, cy, key, {
-        fontSize: '10px', color: '#ffcc44', fontFamily: 'monospace',
-      }).setOrigin(1, 0);
-      this.add.text(W / 2 + 4, cy, desc, {
-        fontSize: '10px', color: '#88aacc', fontFamily: 'monospace',
-      });
-    });
-
-    this.add.text(W / 2, panelY + 118, '4 beats · 120 BPM · rhythm drives everything', {
-      fontSize: '9px', color: '#2a4a30', fontFamily: 'monospace',
-    }).setOrigin(0.5);
-
-    // ---- Start button ----
-    const bx = W / 2, by = 420;
-    const startBtn = this.add.rectangle(bx, by, 220, 50, 0x1a4a22)
-      .setOrigin(0.5).setDepth(10).setInteractive({ useHandCursor: true })
-      .setStrokeStyle(2, 0x44ffaa);
-    startBtn.on('pointerdown', (p) => p.event.stopPropagation());
-    startBtn.on('pointerup', () => this._start());
-
-    const startLbl = this.add.text(bx, by, 'START', {
-      fontSize: '18px', color: '#44ffaa', fontFamily: 'monospace', fontStyle: 'bold',
-    }).setOrigin(0.5).setDepth(11).setInteractive({ useHandCursor: true });
-    startLbl.on('pointerdown', (p) => p.event.stopPropagation());
-    startLbl.on('pointerup', () => this._start());
-
-    this.tweens.add({
-      targets: startBtn,
-      alpha: { from: 1, to: 0.7 },
-      duration: 600, ease: 'Sine.easeInOut', yoyo: true, repeat: -1,
-    });
-
-    // ---- Input ----
     this.input.keyboard.once('keydown-SPACE', () => this._start());
   }
 
+  // ---------------------------------------------------------------------------
+  _buildBg(W, H) {
+    const plxKeys = ['plx_1','plx_2','plx_3','plx_4','plx_5'];
+    this._plxLayers = [];
+    const hasPlx = plxKeys.some(k => this.textures.exists(k));
+
+    if (hasPlx) {
+      plxKeys.forEach((k, i) => {
+        if (!this.textures.exists(k)) return;
+        this._plxLayers.push(
+          this.add.tileSprite(0, 0, W, H, k).setOrigin(0, 0).setDepth(-10 + i)
+        );
+      });
+    } else {
+      const bg = this.add.graphics().setDepth(-10);
+      [[0, 160, 0x020d06], [160, 360, 0x051a0e], [360, H, 0x0a2a18]]
+        .forEach(([y1, y2, col]) => { bg.fillStyle(col); bg.fillRect(0, y1, W, y2 - y1); });
+      bg.fillStyle(0xeeffee, 0.7); bg.fillCircle(820, 55, 38);
+      [50, 160, 300, 460, 620, 780, 920].forEach((cx, i) => {
+        const h = 100 + (i % 3) * 40;
+        bg.fillStyle(0x0a2318); bg.fillEllipse(cx, 380 - h / 2, 90, h);
+      });
+    }
+
+    if (this.textures.exists('vine_hang')) {
+      [80, 260, 480, 700, 920].forEach(vx => {
+        this.add.image(vx, 0, 'vine_hang').setOrigin(0.5, 0).setDepth(-4).setScale(1.6);
+      });
+    }
+
+    const gnd = this.add.graphics().setDepth(-3);
+    gnd.fillStyle(0x1a4a22); gnd.fillRect(0, 505, W, 40);
+    gnd.fillStyle(0x0d2318); gnd.fillRect(0, 516, W, 30);
+    gnd.fillStyle(0xcc9933); gnd.fillRect(0, 505, W, 2);
+  }
+
+  // ---------------------------------------------------------------------------
+  _buildFireflies(W) {
+    for (let i = 0; i < 16; i++) {
+      const ff = this.add.circle(
+        60 + Math.random() * (W - 120),
+        80 + Math.random() * 400,
+        1.5 + Math.random() * 1.5, 0x88ffaa
+      ).setDepth(2);
+      this.tweens.add({
+        targets: ff,
+        x: ff.x + (Math.random() - 0.5) * 140,
+        y: ff.y + (Math.random() - 0.5) * 100,
+        alpha: { from: 0.9, to: 0.05 },
+        duration: 1000 + Math.random() * 2200,
+        ease: 'Sine.easeInOut', yoyo: true, repeat: -1,
+        delay: Math.random() * 2400,
+      });
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  _buildSpotlight(W) {
+    const g = this.add.graphics().setDepth(3);
+    g.fillStyle(0xffee88, 0.05);
+    g.fillTriangle(W / 2, 0, W / 2 - 240, 510, W / 2 + 240, 510);
+    g.fillStyle(0xffee88, 0.03);
+    g.fillTriangle(W / 2, 0, W / 2 - 140, 510, W / 2 + 140, 510);
+
+    // Ground glow ellipse
+    const gl = this.add.graphics().setDepth(3);
+    gl.fillStyle(0xffcc44, 0.07);
+    gl.fillEllipse(W / 2, 503, 320, 36);
+  }
+
+  // ---------------------------------------------------------------------------
+  _buildTitle(W) {
+    const JUNGLE = '"Cinzel Decorative", serif';
+
+    const tb = this.add.graphics().setDepth(9);
+    tb.fillStyle(0x000000, 0.55);
+    tb.fillRoundedRect(W / 2 - 300, 12, 600, 116, 12);
+    tb.lineStyle(2, 0xcc9933, 1);
+    tb.strokeRoundedRect(W / 2 - 300, 12, 600, 116, 12);
+    tb.lineStyle(1, 0x44ffaa, 0.4);
+    tb.strokeRoundedRect(W / 2 - 296, 16, 592, 108, 10);
+
+    // Decorative corner dots
+    [[W/2-292,20],[W/2+292,20],[W/2-292,120],[W/2+292,120]].forEach(([x,y]) => {
+      tb.fillStyle(0xcc9933); tb.fillCircle(x, y, 3);
+    });
+
+    const t1 = this.add.text(W / 2, 52, 'RHYTHM', {
+      fontSize: '42px', color: '#ffcc44', fontFamily: JUNGLE,
+      stroke: '#5a3000', strokeThickness: 8,
+      shadow: { x: 2, y: 4, color: '#1a0800', blur: 12, fill: true },
+    }).setOrigin(0.5).setDepth(10);
+
+    const t2 = this.add.text(W / 2, 98, 'KINGDOM', {
+      fontSize: '34px', color: '#44ffaa', fontFamily: JUNGLE,
+      stroke: '#002a18', strokeThickness: 6,
+      shadow: { x: 2, y: 3, color: '#001a0e', blur: 10, fill: true },
+    }).setOrigin(0.5).setDepth(10);
+
+    // Tagline — visible amber with stroke
+    this.add.text(W / 2, 138, "✦  A Gorilla's Rhythm Journey  ✦", {
+      fontSize: '12px', color: '#ddaa44', fontFamily: 'monospace', fontStyle: 'italic',
+      stroke: '#1a0e00', strokeThickness: 3,
+    }).setOrigin(0.5).setDepth(10);
+
+    this.tweens.add({
+      targets: [t1, t2, tb],
+      y: '-=5', duration: 2000, ease: 'Sine.easeInOut', yoyo: true, repeat: -1,
+    });
+
+    this._titleText = t1;
+  }
+
+  // ---------------------------------------------------------------------------
+  _buildGorilla(W) {
+    const GX = W / 2, GY = 272;
+    const SCALE = 2.5;
+    const FRAMES = ['dance_monk_idle', 'dance_monk_l', 'dance_monk_idle', 'dance_monk_r'];
+
+    this._gorilla = this.add.image(GX, GY, FRAMES[0]).setScale(SCALE).setDepth(8);
+
+    // 4 beat indicator dots below gorilla
+    this._beatDots = [];
+    for (let i = 0; i < 4; i++) {
+      const dot = this.add.circle(GX - 45 + i * 30, GY + 62, 6, 0x1a3322).setDepth(6);
+      dot.setStrokeStyle(2, 0x44ffaa, 0.6);
+      this._beatDots.push(dot);
+    }
+
+    let beatIdx = 0;
+    this.time.addEvent({
+      delay: RK.BEAT_MS,
+      loop: true,
+      callback: () => {
+        const cur = beatIdx;
+        beatIdx = (beatIdx + 1) % 4;
+        const strong = cur === 0;
+
+        // Swap dance frame
+        this._gorilla.setTexture(FRAMES[cur]);
+
+        // Subtle bob — avoid distortion with gentle values
+        const targetSX = SCALE * (strong ? 0.92 : 0.96);
+        const targetSY = SCALE * (strong ? 1.10 : 1.05);
+        this.tweens.killTweensOf(this._gorilla);
+        this._gorilla.setScale(SCALE);
+        this.tweens.add({
+          targets: this._gorilla,
+          scaleX: targetSX, scaleY: targetSY,
+          duration: 80, yoyo: true, ease: 'Sine.easeOut',
+          onComplete: () => this._gorilla.setScale(SCALE),
+        });
+
+        // Expanding ring from gorilla
+        const ringCol = strong ? 0xffcc44 : 0x44ffaa;
+        const ring = this.add.circle(GX, GY, 18, 0x000000, 0).setDepth(7);
+        ring.setStrokeStyle(strong ? 3 : 2, ringCol, 1);
+        this.tweens.add({
+          targets: ring,
+          scaleX: strong ? 7 : 4.5,
+          scaleY: strong ? 5.5 : 3.5,
+          alpha: 0,
+          duration: strong ? 580 : 380,
+          ease: 'Sine.easeOut',
+          onComplete: () => ring.destroy(),
+        });
+
+        // Beat dots
+        const dotCol = strong ? 0xffcc44 : 0x44ffaa;
+        this._beatDots.forEach((d, i) => {
+          if (i === cur) {
+            d.setFillStyle(dotCol);
+            this.tweens.add({ targets: d, scaleX: 1.7, scaleY: 1.7, duration: 90, yoyo: true });
+          } else {
+            d.setFillStyle(0x1a3322);
+          }
+        });
+
+        // Title flash on downbeat
+        if (strong && this._titleText) {
+          this.tweens.add({ targets: this._titleText, alpha: 0.55, duration: 75, yoyo: true });
+        }
+      },
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Controls + start button in one centered horizontal bar
+  _buildBottomBar(W) {
+    const PX = 80, PY = 362, PW = 800, PH = 118;
+    const MID = PX + PW / 2;   // 480
+    const LCX = PX + PW / 4;   // 280  — left half centre
+    const RCX = PX + PW * 3/4; // 680  — right half centre
+
+    // Panel background
+    const bg = this.add.graphics().setDepth(9);
+    bg.fillStyle(0x040e06, 0.90);
+    bg.fillRoundedRect(PX, PY, PW, PH, 8);
+    bg.lineStyle(1, 0x1e3d20);
+    bg.strokeRoundedRect(PX, PY, PW, PH, 8);
+
+    // Centre divider
+    bg.lineStyle(1, 0x1e3d20, 0.8);
+    bg.beginPath();
+    bg.moveTo(MID, PY + 12);
+    bg.lineTo(MID, PY + PH - 12);
+    bg.strokePath();
+
+    // ── LEFT: how to play ──────────────────────────────────────────────────
+    this.add.text(LCX, PY + 14, '— HOW TO PLAY —', {
+      fontSize: '9px', color: '#44ffaa', fontFamily: 'monospace',
+    }).setOrigin(0.5).setDepth(10);
+
+    const controls = [
+      ['A / D',      'move gorilla'],
+      ['CLICK WELL', 'set beat action'],
+      ['ON BEAT',    'action fires!'],
+    ];
+    controls.forEach(([key, desc], i) => {
+      const cy = PY + 34 + i * 22;
+      this.add.text(LCX - 8, cy, key,  { fontSize: '9px', color: '#ffcc44', fontFamily: 'monospace' }).setOrigin(1, 0).setDepth(10);
+      this.add.text(LCX + 8, cy, desc, { fontSize: '9px', color: '#7799bb', fontFamily: 'monospace' }).setOrigin(0, 0).setDepth(10);
+    });
+
+    this.add.text(LCX, PY + PH - 14, '120 BPM  ·  2–8 beats  ·  rhythm rules all', {
+      fontSize: '7px', color: '#55aa77', fontFamily: 'monospace',
+    }).setOrigin(0.5).setDepth(10);
+
+    // ── RIGHT: play button ─────────────────────────────────────────────────
+    const FONT = '"Press Start 2P", monospace';
+    const by = PY + PH / 2;
+
+    const btn = this.add.rectangle(RCX, by, 260, 72, 0x071a09)
+      .setOrigin(0.5).setDepth(12).setInteractive({ useHandCursor: true })
+      .setStrokeStyle(2, 0x44ffaa);
+
+    const lbl = this.add.text(RCX, by - 10, '▶  PLAY', {
+      fontSize: '17px', color: '#44ffaa', fontFamily: FONT,
+      shadow: { x: 0, y: 3, color: '#002a18', blur: 6, fill: true },
+    }).setOrigin(0.5).setDepth(13).setInteractive({ useHandCursor: true });
+
+    const sub = this.add.text(RCX, by + 16, 'or press SPACE', {
+      fontSize: '8px', color: '#2a5a30', fontFamily: 'monospace',
+    }).setOrigin(0.5).setDepth(13);
+
+    const hover = (on) => {
+      btn.setFillStyle(on ? 0x0e3214 : 0x071a09);
+      lbl.setStyle({ color: on ? '#88ffcc' : '#44ffaa' });
+    };
+    [btn, lbl].forEach(o => {
+      o.on('pointerdown', (p) => p.event.stopPropagation());
+      o.on('pointerup', () => this._start());
+      o.on('pointerover', () => hover(true));
+      o.on('pointerout', () => hover(false));
+    });
+
+    this.tweens.add({
+      targets: [btn, lbl, sub],
+      alpha: { from: 1, to: 0.72 },
+      duration: 700, ease: 'Sine.easeInOut', yoyo: true, repeat: -1,
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  update() {
+    if (this._plxLayers) {
+      this._plxLayers.forEach((spr, i) => { spr.tilePositionX += 0.1 + i * 0.08; });
+    }
+  }
+
+  _startMenuMusic() {
+    const a = window.RK && window.RK._audio;
+    if (!a) return;
+    a._ensureCtx(); // must call during user gesture to unsuspend context
+    if (a.buffers['menu_loop']) {
+      if (!this._menuMusicOn) {
+        this._menuMusicOn = true;
+        a.playLoop('menu_loop');
+      }
+    } else {
+      // Buffer still fetching — retry until loaded (up to 5s)
+      this._menuRetries = (this._menuRetries || 0) + 1;
+      if (this._menuRetries < 25) {
+        this.time.delayedCall(200, () => this._startMenuMusic());
+      }
+    }
+  }
+
+  _stopMenuMusic() {
+    const a = window.RK && window.RK._audio;
+    if (a) a.stopLoop('menu_loop');
+    this._menuMusicOn = false;
+  }
+
   _start() {
-    console.log('[MenuScene] _start called');
-    if (window.RK && window.RK._audio) window.RK._audio._ensureCtx();
+    // Ensure context unlocked even if music not started yet
+    const a = window.RK && window.RK._audio;
+    if (a) a._ensureCtx();
     this.cameras.main.flash(200, 20, 100, 40);
-    this.time.delayedCall(200, () => {
-      console.log('[MenuScene] starting GameScene');
+    this.time.delayedCall(300, () => {
+      this._stopMenuMusic();
       this.scene.start('GameScene', { level: 'level1' });
     });
+  }
+
+  shutdown() {
+    this._stopMenuMusic();
   }
 }

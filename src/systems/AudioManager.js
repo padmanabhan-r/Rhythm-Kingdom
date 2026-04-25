@@ -24,7 +24,7 @@ window.RK.AudioManager = class AudioManager {
   async loadSounds() {
     this._ensureCtx();
     const keys = [
-      'backing_loop_chill', 'backing_loop', 'backing_loop_intense',
+      'backing_loop_chill', 'backing_loop', 'backing_loop_intense', 'menu_loop',
       'jump', 'roll', 'coconut_throw', 'coconut_impact', 'punch',
       'unlock_action', 'checkpoint',
       'invalid_beat', 'hit', 'death', 'level_complete',

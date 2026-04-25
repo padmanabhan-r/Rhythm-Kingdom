@@ -12,6 +12,7 @@ window.RK.RhythmClock = class RhythmClock {
     this._nextBeatTime = 0;
     this._beatIndex = 0;
     this._running = false;
+    this._beatCount = RK.BEAT_COUNT;
   }
 
   start() {
@@ -41,6 +42,11 @@ window.RK.RhythmClock = class RhythmClock {
     if (wasRunning) this.start();
   }
 
+  setBeatCount(n) {
+    this._beatCount = Math.max(2, Math.min(8, n));
+    if (this._beatIndex >= this._beatCount) this._beatIndex = 0;
+  }
+
   reset() {
     this._beatIndex = 0;
     const ctx = this._audio._ensureCtx();
@@ -64,7 +70,7 @@ window.RK.RhythmClock = class RhythmClock {
         }
       }, delay);
       this._nextBeatTime += BEAT_S;
-      this._beatIndex = (this._beatIndex + 1) % RK.BEAT_COUNT;
+      this._beatIndex = (this._beatIndex + 1) % this._beatCount;
     }
   }
 };

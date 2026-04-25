@@ -87,12 +87,22 @@ window.RK.Player = class Player extends Phaser.Physics.Arcade.Sprite {
     if (!this.isOnGround || this.isRolling) return;
     this.body.setVelocityY(RK.JUMP_FORCE);
     this.coyoteTimer = 0;
-    // Stretch on launch
-    this.setScale(0.85, 1.3);
+    this.setScale(0.88, 1.2);
     this.scene.tweens.add({
       targets: this, scaleX: 1, scaleY: 1, duration: 200, ease: 'Back.easeOut',
     });
     this.scene.game.events.emit('rk_player_jump', { x: this.x, y: this.y });
+  }
+
+  doDoubleJump() {
+    if (this.isRolling) return;
+    this.body.setVelocityY(RK.JUMP_FORCE_DOUBLE);
+    this.coyoteTimer = 0;
+    this.setScale(0.8, 1.5);
+    this.scene.tweens.add({
+      targets: this, scaleX: 1, scaleY: 1, duration: 250, ease: 'Back.easeOut',
+    });
+    this.scene.game.events.emit('rk_player_jump', { x: this.x, y: this.y, double: true });
   }
 
   doRoll() {

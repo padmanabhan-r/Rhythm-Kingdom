@@ -15,6 +15,11 @@ LOOPS = {
     "backing_loop_intense": ("feral African jungle drum battle, 120 BPM exactly, triple-time djembe "
                              "sprints, rumbling dundun bass, wild shakers, thunder, stampeding "
                              "percussion, savage high-energy, full room-filling, seamless loop"),
+    "menu_loop":            ("wild African jungle ambience, 120 BPM, frantic djembe drumming, "
+                             "howling monkeys screaming and chattering, chimpanzee calls echoing, "
+                             "tropical birds shrieking, dense layered percussion, bamboo shakers, "
+                             "deep dundun bass pulses, primal savage energy, dense canopy sounds, "
+                             "full room-filling, seamless loop"),
 }
 SOUNDS = {
     "jump":           ("kpanlogo drum hit, Ghanaian bell drum, bright resonant metal-wood "

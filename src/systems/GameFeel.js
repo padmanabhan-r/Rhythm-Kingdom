@@ -50,19 +50,19 @@ window.RK.GameFeel = class GameFeel {
     });
   }
 
-  beatPulse(strong) {
+  beatPulse(beatIndex) {
+    const strong = beatIndex === 0;
     const cam = this._scene.cameras.main;
-    const angle = (strong ? 1.2 : 0.6) * (this._beatAlt ? 1 : -1);
+    // Gentle sway — halved from original
+    const angle = (strong ? 0.9 : 0.45) * (this._beatAlt ? 1 : -1);
     this._beatAlt = !this._beatAlt;
     cam.rotation = angle * (Math.PI / 180);
     this._scene.tweens.add({
       targets: { rot: cam.rotation },
-      rot: 0,
-      duration: 220,
-      ease: 'Sine.easeOut',
+      rot: 0, duration: 220, ease: 'Sine.easeOut',
       onUpdate: (tween, obj) => { cam.rotation = obj.rot; },
     });
-    cam.flash(40, 200, 200, 200, 0.08, false);
+    // Color pulse handled by UIScene — no cam.flash here
   }
 
   dustBurst(x, y) {

@@ -9,9 +9,10 @@ class GameScene extends Phaser.Scene {
   init(data) {
     this.levelKey   = (data && data.level) || 'level1';
     this.levelData  = RK.Levels[this.levelKey];
-    this._complete  = false;
-    this._checkpointX = null;
-    this._checkpointY = null;
+    this._complete        = false;
+    this._checkpointX     = null;
+    this._checkpointY     = null;
+    this._activeBeatCount = RK.BEAT_COUNT;
   }
 
   create() {
@@ -198,7 +199,8 @@ class GameScene extends Phaser.Scene {
     this.game.events.on('rk_player_roll',   this._onPlayerRoll,    this);
     this.game.events.on('rk_player_hit',    this._onPlayerHit,     this);
     this.game.events.on('rk_player_dead',   this._onPlayerDead,    this);
-    this.game.events.on('rk_loop_change',   this._onLoopChange,    this);
+    this.game.events.on('rk_loop_change',        this._onLoopChange,       this);
+    this.game.events.on('rk_beat_count_change',  this._onBeatCountChange,  this);
   }
 
   // ---------------------------------------------------------------------------
@@ -239,7 +241,7 @@ class GameScene extends Phaser.Scene {
   _onBeat(beatIndex) {
     if (!this.player || this.player.dead) return;
 
-    this._gameFeel.beatPulse(beatIndex === 0);
+    this._gameFeel.beatPulse(beatIndex);
 
     // Ambient jungle sounds — time-based cooldown (was broken: used beatIndex 0-3 vs >=8)
     const now = this.time.now;
@@ -259,12 +261,19 @@ class GameScene extends Phaser.Scene {
       return;
     }
 
+
     const SFX = { JUMP: 'jump', ROLL: 'roll', COCONUT: 'coconut_throw', PUNCH: 'punch' };
     this._audio.play(SFX[action], 1.0);
     this.game.events.emit('rk_slot_success', beatIndex);
 
     switch (action) {
-      case 'JUMP':    this.player.doJump();    break;
+      case 'JUMP': {
+        const n = this._activeBeatCount;
+        const prev = this.timeline.getSlot((beatIndex - 1 + n) % n);
+        if (prev === 'JUMP') this.player.doDoubleJump();
+        else                 this.player.doJump();
+        break;
+      }
       case 'ROLL':    this.player.doRoll();    break;
       case 'COCONUT': this.player.doCoconut(); break;
       case 'PUNCH':   this.player.doPunch();   break;
@@ -275,7 +284,12 @@ class GameScene extends Phaser.Scene {
     if (this._rhythmClock) this._rhythmClock.setLoopKey(data.loopKey);
   }
 
-  // ---------------------------------------------------------------------------
+  _onBeatCountChange({ count }) {
+    this._activeBeatCount = count;
+    if (this._rhythmClock) this._rhythmClock.setBeatCount(count);
+  }
+
+// ---------------------------------------------------------------------------
   //  ACTION HANDLERS
   // ---------------------------------------------------------------------------
 
@@ -448,6 +462,7 @@ class GameScene extends Phaser.Scene {
     this.game.events.off('rk_player_roll',   this._onPlayerRoll,    this);
     this.game.events.off('rk_player_hit',    this._onPlayerHit,     this);
     this.game.events.off('rk_player_dead',   this._onPlayerDead,    this);
-    this.game.events.off('rk_loop_change',   this._onLoopChange,    this);
+    this.game.events.off('rk_loop_change',        this._onLoopChange,      this);
+    this.game.events.off('rk_beat_count_change',  this._onBeatCountChange, this);
   }
 }

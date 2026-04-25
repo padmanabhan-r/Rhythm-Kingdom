@@ -7,20 +7,21 @@ class UIScene extends Phaser.Scene {
   constructor() { super({ key: 'UIScene' }); }
 
   init(data) {
-    this.timeline    = (data && data.timeline) || new RK.Timeline();
-    this.currentBeat = 0;
+    this.timeline         = (data && data.timeline) || new RK.Timeline();
+    this.currentBeat      = 0;
     this._unlockedActions = ['JUMP', 'ROLL'];
+    this._activeBeatCount = RK.BEAT_COUNT;
   }
 
   create() {
     this.PANEL_TOP = 0;
-    this.WELL_W    = 72;
-    this.WELL_H    = 56;
-    this.WELL_GAP  = 8;
+    this.WELL_W    = 52;
+    this.WELL_H    = 42;
+    this.WELL_GAP  = 5;
 
-    const totalW     = RK.BEAT_COUNT * this.WELL_W + (RK.BEAT_COUNT - 1) * this.WELL_GAP;
-    this.wellStartX  = (RK.WIDTH - totalW) / 2;
-    this.WELL_CY     = 35;
+    const totalW    = RK.BEAT_COUNT * this.WELL_W + (RK.BEAT_COUNT - 1) * this.WELL_GAP;
+    this.wellStartX = (RK.WIDTH - totalW) / 2;
+    this.WELL_CY    = 33;
 
     this._buildPanel();
     this._buildWells();
@@ -40,7 +41,9 @@ class UIScene extends Phaser.Scene {
 
   // ---------------------------------------------------------------------------
   _wellX(i) {
-    return this.wellStartX + i * (this.WELL_W + this.WELL_GAP) + this.WELL_W / 2;
+    const n = this._activeBeatCount;
+    const startX = (RK.WIDTH - (n * this.WELL_W + (n - 1) * this.WELL_GAP)) / 2;
+    return startX + i * (this.WELL_W + this.WELL_GAP) + this.WELL_W / 2;
   }
 
   // ---------------------------------------------------------------------------
@@ -63,26 +66,26 @@ class UIScene extends Phaser.Scene {
       const cy = this.WELL_CY;
 
       // Beat number label
-      const numStyle = { fontSize: '11px', color: '#cc9933', fontFamily: 'monospace', fontStyle: 'bold' };
-      const num = this.add.text(cx, cy - 25, String(i + 1), numStyle).setOrigin(0.5).setDepth(2);
+      const numStyle = { fontSize: '9px', color: '#cc9933', fontFamily: 'monospace', fontStyle: 'bold' };
+      const num = this.add.text(cx, cy - 20, String(i + 1), numStyle).setOrigin(0.5).setDepth(2);
       this.beatNums.push(num);
 
       // Stone well base
-      const bg = this.add.image(cx, cy, 'beat_well').setDepth(1).setScale(0.72);
+      const bg = this.add.image(cx, cy, 'beat_well').setDepth(1).setScale(0.54);
       this.wellBgs.push(bg);
 
       // Glow overlay
-      const glow = this.add.rectangle(cx, cy, this.WELL_W - 16, this.WELL_H - 16, 0x44ffaa, 0)
+      const glow = this.add.rectangle(cx, cy, this.WELL_W - 10, this.WELL_H - 10, 0x44ffaa, 0)
         .setDepth(2);
       this.wellGlows.push(glow);
 
       // Action icon
-      const icon = this.add.image(cx, cy, 'action_jump').setDepth(3).setAlpha(0).setScale(0.65);
+      const icon = this.add.image(cx, cy, 'action_jump').setDepth(3).setAlpha(0).setScale(0.46);
       this.wellIcons.push(icon);
 
       // Action name label beneath icon
-      const lblStyle = { fontSize: '7px', color: '#cc9933', fontFamily: 'monospace' };
-      const lbl = this.add.text(cx, cy + 20, '', lblStyle).setOrigin(0.5).setDepth(3);
+      const lblStyle = { fontSize: '6px', color: '#cc9933', fontFamily: 'monospace' };
+      const lbl = this.add.text(cx, cy + 15, '', lblStyle).setOrigin(0.5).setDepth(3);
       this.wellLabels.push(lbl);
 
       // Click interaction
@@ -116,62 +119,137 @@ class UIScene extends Phaser.Scene {
     this._tracks = tracks;
     this._trackIndex = 1;
 
-    // Gear button — RIGHT side of panel
-    const bx = RK.WIDTH - 22;
-    const by = 30;
-    this._gearBtn = this.add.rectangle(bx, by, 18, 18, 0x2a2015)
+    // Gear button
+    const gbx = RK.WIDTH - 22, gby = this.WELL_CY;
+    this._gearBtn = this.add.rectangle(gbx, gby, 18, 18, 0x2a2015)
       .setDepth(5).setStrokeStyle(1, 0xcc9933).setScrollFactor(0).setInteractive({ useHandCursor: true });
     this._gearBtn.on('pointerdown', (p) => p.event.stopPropagation());
-    this._gearBtn.on('pointerup', () => this._toggleTrackPicker());
-
-    // Gear icon — 6 dots around center
+    this._gearBtn.on('pointerup', () => this._toggleSettings());
     const gl = this.add.graphics().setDepth(6).setScrollFactor(0);
     gl.fillStyle(0xcc9933);
     for (let i = 0; i < 6; i++) {
       const a = (i / 6) * Math.PI * 2 - Math.PI / 2;
-      gl.fillCircle(bx + Math.cos(a) * 6, by + Math.sin(a) * 6, 1.8);
+      gl.fillCircle(gbx + Math.cos(a) * 6, gby + Math.sin(a) * 6, 1.8);
     }
-    gl.fillCircle(bx, by, 2.5);
+    gl.fillCircle(gbx, gby, 2.5);
 
-    // Track picker — pops below gear button, right-aligned
-    const pickerX = RK.WIDTH - 162;
-    const pickerY = RK.UI_HEIGHT + 40;
-    this._pickerBg = this.add.rectangle(pickerX, pickerY, 300, 55, 0x1a140e, 0.95)
+    // Settings popup — centered, sized to fit all buttons
+    // Wells: 7 × 40px + 6 × 4px gap = 304px  →  popup width 340
+    // Music: 3 × 86px + 2 × 6px gap = 270px  →  fits inside
+    const pw = 340, ph = 130;
+    const pcx = RK.WIDTH - pw / 2 - 12;   // right-aligned with 12px margin
+    const pcy = RK.UI_HEIGHT + 72;
+
+    this._pickerBg = this.add.rectangle(pcx, pcy, pw, ph, 0x120e08, 0.97)
       .setDepth(20).setAlpha(0).setStrokeStyle(2, 0xcc9933).setScrollFactor(0);
 
+    const popObjs = [];
+    const PAD = pcx - pw / 2 + 12;  // left text margin
+
+    // ── WELLS ─────────────────────────────────────────────────────────────────
+    popObjs.push(this.add.text(PAD, pcy - 52, 'WELLS', {
+      fontSize: '8px', color: '#cc9933', fontFamily: 'monospace',
+    }).setDepth(22).setAlpha(0).setScrollFactor(0));
+
+    // 7 buttons centered on pcx: step=44px, total span=6*44=264, half=132
+    this._wellCountBtns = [];
+    for (let n = 2; n <= 8; n++) {
+      const bx = pcx - 132 + (n - 2) * 44;
+      const by = pcy - 28;
+      const active = n === this._activeBeatCount;
+      const btn = this.add.rectangle(bx, by, 40, 24, active ? 0x1e4a1e : 0x1a1a0e)
+        .setDepth(21).setAlpha(0).setScrollFactor(0).setInteractive({ useHandCursor: true })
+        .setStrokeStyle(1, active ? 0x44ffaa : 0x443322);
+      btn.on('pointerdown', (p) => p.event.stopPropagation());
+      btn.on('pointerup', () => { this._setActiveBeatCount(n); this._toggleSettings(); });
+      const lbl = this.add.text(bx, by, String(n), {
+        fontSize: '10px', color: active ? '#44ffaa' : '#886633',
+        fontFamily: 'monospace', fontStyle: 'bold',
+      }).setOrigin(0.5).setDepth(22).setAlpha(0).setScrollFactor(0);
+      popObjs.push(btn, lbl);
+      this._wellCountBtns.push({ btn, lbl, n });
+    }
+
+    // Divider
+    const div = this.add.graphics().setDepth(21).setAlpha(0).setScrollFactor(0);
+    div.lineStyle(1, 0x443322, 0.7);
+    div.beginPath(); div.moveTo(pcx - pw / 2 + 12, pcy); div.lineTo(pcx + pw / 2 - 12, pcy); div.strokePath();
+    popObjs.push(div);
+
+    // ── MUSIC ─────────────────────────────────────────────────────────────────
+    popObjs.push(this.add.text(PAD, pcy + 8, 'MUSIC', {
+      fontSize: '8px', color: '#cc9933', fontFamily: 'monospace',
+    }).setDepth(22).setAlpha(0).setScrollFactor(0));
+
+    // 3 buttons centered on pcx: step=92px, total span=2*92=184, half=92
     this._pickerBtns = tracks.map((t, i) => {
-      const px = (RK.WIDTH - 280) + i * 100;
-      const py = pickerY;
-      const btn = this.add.rectangle(px, py, 90, 30, t.color, 0.15)
+      const px = pcx - 92 + i * 92;
+      const py = pcy + 36;
+      const btn = this.add.rectangle(px, py, 86, 28, t.color, 0.12)
         .setDepth(21).setAlpha(0).setScrollFactor(0).setInteractive({ useHandCursor: true })
         .setStrokeStyle(1, t.color);
       btn.on('pointerdown', (p) => p.event.stopPropagation());
       btn.on('pointerup', () => this._selectTrack(i));
       const lbl = this.add.text(px, py, t.label, {
-        fontSize: '10px', color: '#' + t.color.toString(16).padStart(6, '0'),
+        fontSize: '9px', color: '#' + t.color.toString(16).padStart(6, '0'),
         fontFamily: 'monospace', fontStyle: 'bold',
-      }).setOrigin(0.5).setDepth(22).setScrollFactor(0).setAlpha(0);
+      }).setOrigin(0.5).setDepth(22).setAlpha(0).setScrollFactor(0);
+      popObjs.push(btn, lbl);
       return { btn, lbl, track: t };
     });
 
+    this._popObjs = popObjs;
     this._pickerOpen = false;
   }
 
-  _toggleTrackPicker() {
+  _toggleSettings() {
     this._pickerOpen = !this._pickerOpen;
-    const target = this._pickerOpen ? 1 : 0;
-    this._pickerBg.setAlpha(target);
-    this._pickerBtns.forEach(({ btn, lbl }) => {
-      btn.setAlpha(target);
-      lbl.setAlpha(target);
-    });
+    const a = this._pickerOpen ? 1 : 0;
+    this._pickerBg.setAlpha(a);
+    this._popObjs.forEach(o => o.setAlpha(a));
   }
 
   _selectTrack(index) {
     this._trackIndex = index;
-    const track = this._tracks[index];
-    this.game.events.emit('rk_loop_change', { loopKey: track.key });
-    this._toggleTrackPicker();
+    this.game.events.emit('rk_loop_change', { loopKey: this._tracks[index].key });
+    this._toggleSettings();
+  }
+
+  _setActiveBeatCount(n) {
+    this._activeBeatCount = n;
+
+    // Highlight active button in popup
+    this._wellCountBtns.forEach(({ btn, lbl, n: bn }) => {
+      const on = bn === n;
+      btn.setFillStyle(on ? 0x1e4a1e : 0x1a1a0e);
+      btn.setStrokeStyle(1, on ? 0x44ffaa : 0x443322);
+      lbl.setStyle({ color: on ? '#44ffaa' : '#886633' });
+    });
+
+    // Reposition active wells centered, hide extras
+    for (let i = 0; i < RK.BEAT_COUNT; i++) {
+      if (i < n) {
+        const cx = this._wellX(i);
+        this.wellBgs[i].setPosition(cx, this.WELL_CY).setVisible(true)
+          .setInteractive({ useHandCursor: true });
+        this.beatNums[i].setPosition(cx, this.WELL_CY - 20).setVisible(true);
+        this.wellIcons[i].setPosition(cx, this.WELL_CY).setVisible(true);
+        this.wellGlows[i].setPosition(cx, this.WELL_CY).setVisible(true);
+        this.wellLabels[i].setPosition(cx, this.WELL_CY + 15).setVisible(true);
+      } else {
+        this.wellBgs[i].setVisible(false).removeInteractive();
+        this.beatNums[i].setVisible(false);
+        this.wellIcons[i].setVisible(false);
+        this.wellGlows[i].setVisible(false);
+        this.wellLabels[i].setVisible(false);
+        this.timeline.clearSlot(i);
+      }
+    }
+
+    // Snap playhead to well 0
+    this._playhead.setPosition(this._wellX(0), this.WELL_CY);
+
+    this.game.events.emit('rk_beat_count_change', { count: n });
   }
 
   _refreshUnlockDisplay() {
@@ -204,25 +282,47 @@ class UIScene extends Phaser.Scene {
 
   // ---------------------------------------------------------------------------
   _onWellClick(index) {
+    if (index >= this._activeBeatCount) return;
     this.timeline.cycleSlot(index);
+
+    // If this created 3 consecutive JUMPs, cycle past JUMP and warn
+    if (this.timeline.getSlot(index) === 'JUMP' && this._wouldTripleJump(index)) {
+      this.timeline.cycleSlot(index);
+      this._showBeatMsg('Max 2 jumps in a row!');
+    }
+
     this._updateWellVisuals();
     const glow = this.wellGlows[index];
+    this.tweens.add({ targets: glow, fillAlpha: 0.5, duration: 80, yoyo: true });
+  }
+
+  _wouldTripleJump(i) {
+    const n = this._activeBeatCount;
+    const g = (idx) => this.timeline.getSlot(((idx % n) + n) % n);
+    return (g(i-2) === 'JUMP' && g(i-1) === 'JUMP') ||
+           (g(i-1) === 'JUMP' && g(i+1) === 'JUMP') ||
+           (g(i+1) === 'JUMP' && g(i+2) === 'JUMP');
+  }
+
+  _showBeatMsg(text) {
+    if (this._msgTxt) { this._msgTxt.destroy(); this._msgTxt = null; }
+    this._msgTxt = this.add.text(RK.WIDTH / 2, RK.UI_HEIGHT + 14, text, {
+      fontSize: '10px', color: '#ffcc44', fontFamily: 'monospace',
+      backgroundColor: '#00000099', padding: { x: 8, y: 4 },
+    }).setOrigin(0.5).setDepth(30).setScrollFactor(0);
     this.tweens.add({
-      targets: glow, fillAlpha: 0.5, duration: 80, yoyo: true,
+      targets: this._msgTxt, alpha: 0, duration: 1400, delay: 600,
+      onComplete: () => { if (this._msgTxt) { this._msgTxt.destroy(); this._msgTxt = null; } },
     });
   }
 
   _onPointerDown(pointer) {
     if (pointer.y < this.PANEL_TOP) return;
     if (this._pickerOpen) {
-      let inside = false;
-      const px = pointer.x, py = pointer.y;
-      this._pickerBtns.forEach(({ btn }) => {
-        const bx = btn.x - 45, ex = btn.x + 45;
-        const by = btn.y - 15, ey = btn.y + 15;
-        if (px >= bx && px <= ex && py >= by && py <= ey) inside = true;
-      });
-      if (!inside) this._toggleTrackPicker();
+      const bg = this._pickerBg;
+      const inside = Math.abs(pointer.x - bg.x) < bg.width / 2 &&
+                     Math.abs(pointer.y - bg.y) < bg.height / 2;
+      if (!inside) this._toggleSettings();
       return;
     }
     if (pointer.rightButtonDown()) {
@@ -243,7 +343,7 @@ class UIScene extends Phaser.Scene {
     this.currentBeat = beatIndex;
     this._movePlayhead(beatIndex);
     this._pulseWell(beatIndex);
-    this._beatScreenPulse(beatIndex === 0);
+    this._beatScreenPulse(beatIndex);
     this._updateBeatNumbers(beatIndex);
   }
 
@@ -257,22 +357,23 @@ class UIScene extends Phaser.Scene {
   }
 
   _pulseWell(i) {
+    if (i >= this._activeBeatCount) return;
     const bg = this.wellBgs[i];
     this.tweens.add({
-      targets: bg, scaleX: 0.78, scaleY: 0.78,
+      targets: bg, scaleX: 0.60, scaleY: 0.60,
       duration: 80, yoyo: true, ease: 'Sine.easeOut',
     });
   }
 
-  _beatScreenPulse(strong) {
-    const alpha = strong ? 0.12 : 0.04;
-    const col   = strong ? 0xffcc44 : 0x44ffaa;
-    const rect  = this.add.rectangle(
-      RK.WIDTH / 2, this.PANEL_TOP + RK.UI_HEIGHT / 2,
-      RK.WIDTH, RK.UI_HEIGHT, col, alpha
-    ).setDepth(10);
+  _beatScreenPulse(beatIndex) {
+    const cols = [0xffffff, 0xff2222, 0xffee22, 0x22ff44];
+    const col  = cols[beatIndex % 4];
+    const rect = this.add.rectangle(
+      RK.WIDTH / 2, RK.HEIGHT / 2,
+      RK.WIDTH, RK.HEIGHT, col, 0.1
+    ).setDepth(10).setScrollFactor(0);
     this.tweens.add({
-      targets: rect, alpha: 0, duration: 120, ease: 'Sine.easeOut',
+      targets: rect, alpha: 0, duration: 200, ease: 'Sine.easeOut',
       onComplete: () => rect.destroy(),
     });
   }
