@@ -338,7 +338,7 @@ class UIScene extends Phaser.Scene {
     this.timeline.cycleSlot(index);
 
     // If this created 3 consecutive JUMPs, cycle past JUMP and warn
-    if (this.timeline.getSlot(index) === 'JUMP' && this._wouldTripleJump(index)) {
+    if (this.timeline.getSlot(index) === 'JUMP' && this._activeBeatCount >= 3 && this._wouldTripleJump(index)) {
       this.timeline.cycleSlot(index);
       this._showBeatMsg('Max 2 jumps in a row!');
     }
@@ -424,12 +424,8 @@ class UIScene extends Phaser.Scene {
       ).setDepth(10).setScrollFactor(0).setAlpha(0);
     }
     const cols = [0xffffff, 0xff2222, 0xffee22, 0x22ff44];
-    this.tweens.killTweensOf(this._pulseRect);
     this._pulseRect.setFillStyle(cols[beatIndex % 4], 1);
-    this._pulseRect.setAlpha(0.13);
-    this.tweens.add({
-      targets: this._pulseRect, alpha: 0, duration: 220, ease: 'Sine.easeOut',
-    });
+    this._pulseAlpha = 0.13;
   }
 
   _updateBeatNumbers(activeBeat) {
@@ -475,6 +471,13 @@ class UIScene extends Phaser.Scene {
 
   _onLevelComplete() {
     // no-op — level transition handled by GameScene
+  }
+
+  update(time, delta) {
+    if (this._pulseAlpha > 0 && this._pulseRect) {
+      this._pulseAlpha = Math.max(0, this._pulseAlpha - delta / 1700);
+      this._pulseRect.setAlpha(this._pulseAlpha);
+    }
   }
 
   // ---------------------------------------------------------------------------

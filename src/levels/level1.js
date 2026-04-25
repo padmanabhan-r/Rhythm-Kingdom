@@ -104,6 +104,14 @@ window.RK.Levels.level1 = {
     { x: 2970, y: 336 }, { x: 3010, y: 336 },
   ],
 
+  signs: [
+    { x: 160,  y: 494, text: 'A / D  to move' },
+    { x: 360,  y: 494, text: 'Click wells above\nto place runes', small: true },
+    { x: 430,  y: 494, text: 'JUMP rune\nclears water', small: true },
+    { x: 760,  y: 494, text: 'Wide gap!\n2x JUMP = double jump', small: true },
+    { x: 1900, y: 494, text: 'ROLL under\nthe pillar!', small: true },
+  ],
+
   pickups: [],
 
   exit: { x: 3140, y: 458 },

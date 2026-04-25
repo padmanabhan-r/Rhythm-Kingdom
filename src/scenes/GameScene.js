@@ -50,6 +50,7 @@ class GameScene extends Phaser.Scene {
     RK.GameSceneBuilder.buildEnemies(this, ld);
     RK.GameSceneBuilder.buildPickups(this, ld);
     RK.GameSceneBuilder.buildBananas(this, ld);
+    RK.GameSceneBuilder.buildSigns(this, ld);
     RK.GameSceneBuilder.buildCheckpoints(this, ld);
     RK.GameSceneBuilder.buildExit(this, ld);
 

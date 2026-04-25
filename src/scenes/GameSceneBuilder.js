@@ -163,6 +163,28 @@ window.RK.GameSceneBuilder = {
     });
   },
 
+  buildSigns(scene, ld) {
+    (ld.signs || []).forEach(s => {
+      const gfx = scene.add.graphics().setDepth(4);
+      // Stake
+      gfx.fillStyle(0x5a3810); gfx.fillRect(s.x - 1, s.y - 40, 3, 42);
+      // Board
+      gfx.fillStyle(0x7a4e18); gfx.fillRect(s.x - 54, s.y - 72, 108, 34);
+      gfx.fillStyle(0x9a6628); gfx.fillRect(s.x - 52, s.y - 70, 104, 30);
+      gfx.lineStyle(1, 0x4a2e08); gfx.strokeRect(s.x - 54, s.y - 72, 108, 34);
+      // Corner nails
+      gfx.fillStyle(0xccaa44);
+      [[s.x-50,s.y-68],[s.x+50,s.y-68],[s.x-50,s.y-42],[s.x+50,s.y-42]]
+        .forEach(([nx,ny]) => gfx.fillCircle(nx,ny,2));
+      // Text
+      scene.add.text(s.x, s.y - 55, s.text, {
+        fontSize: s.small ? '7px' : '8px',
+        color: '#2a1408', fontFamily: 'monospace', fontStyle: 'bold',
+        align: 'center',
+      }).setOrigin(0.5).setDepth(5);
+    });
+  },
+
   buildExit(scene, ld) {
     const ex = ld.exit;
     scene.add.image(ex.x + 24, ex.y - 28, 'exit_arch').setDepth(2);
