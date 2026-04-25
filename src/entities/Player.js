@@ -109,7 +109,7 @@ window.RK.Player = class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   doRoll() {
-    if (!this.isOnGround || this.isRolling) return;
+    if (this.isRolling) return;
     this.isRolling = true;
     this.rollTimer = 300;
     // Shrink hitbox for roll

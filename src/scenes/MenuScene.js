@@ -16,11 +16,7 @@ class MenuScene extends Phaser.Scene {
     this._buildGorilla(W);
     this._buildBottomBar(W);
 
-    // Start music on first interaction — browser blocks autoplay before gesture
-    this.input.once('pointerdown', () => this._startMenuMusic());
-    this.input.keyboard.once('keydown', () => this._startMenuMusic());
-
-    this.input.keyboard.once('keydown-SPACE', () => this._start());
+    this._buildTapOverlay(W, H);
   }
 
   // ---------------------------------------------------------------------------
@@ -290,6 +286,42 @@ class MenuScene extends Phaser.Scene {
     if (this._plxLayers) {
       this._plxLayers.forEach((spr, i) => { spr.tilePositionX += 0.1 + i * 0.08; });
     }
+  }
+
+  _buildTapOverlay(W, H) {
+    // Full-screen dark overlay
+    const overlay = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.72)
+      .setDepth(50).setInteractive();
+
+    // Pulsing tap prompt
+    const txt = this.add.text(W / 2, H / 2, 'TAP TO BEGIN', {
+      fontSize: '28px', color: '#ffcc44',
+      fontFamily: '"Cinzel Decorative", serif', fontStyle: 'bold',
+      stroke: '#5a3000', strokeThickness: 6,
+      shadow: { x: 0, y: 4, color: '#000', blur: 12, fill: true },
+    }).setOrigin(0.5).setDepth(51);
+
+    const sub = this.add.text(W / 2, H / 2 + 44, 'click or press any key', {
+      fontSize: '11px', color: '#886633', fontFamily: 'monospace',
+    }).setOrigin(0.5).setDepth(51);
+
+    this.tweens.add({
+      targets: txt, alpha: { from: 1, to: 0.3 },
+      duration: 700, ease: 'Sine.easeInOut', yoyo: true, repeat: -1,
+    });
+
+    const dismiss = () => {
+      this._startMenuMusic();
+      this.tweens.add({
+        targets: [overlay, txt, sub], alpha: 0, duration: 400,
+        onComplete: () => { overlay.destroy(); txt.destroy(); sub.destroy(); },
+      });
+      // Only wire SPACE → start AFTER overlay gone
+      this.input.keyboard.once('keydown-SPACE', () => this._start());
+    };
+
+    overlay.once('pointerdown', dismiss);
+    this.input.keyboard.once('keydown', dismiss);
   }
 
   _startMenuMusic() {

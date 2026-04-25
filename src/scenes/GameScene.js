@@ -149,6 +149,11 @@ class GameScene extends Phaser.Scene {
 
   _buildTutorial(ld) {
     this._tutorials = (ld.tutorials || []).map(t => ({ ...t, shown: false }));
+    // Show first hint immediately
+    if (this._tutorials.length > 0) {
+      this._tutorials[0].shown = true;
+      this.time.delayedCall(400, () => this._showTutorial(this._tutorials[0].msg));
+    }
     this._tutVisible = false;
 
     const BY = RK.UI_HEIGHT + 8, BH = 44;
