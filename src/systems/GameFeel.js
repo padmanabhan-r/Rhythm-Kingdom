@@ -1,0 +1,101 @@
+// =============================================================================
+//  Rhythm Kingdom — GameFeel.js
+//  Hitstop, screen shake, squash/stretch, camera lead, particles.
+// =============================================================================
+
+window.RK.GameFeel = class GameFeel {
+  constructor(scene) {
+    this._scene = scene;
+    this._particles = scene.add.group();
+  }
+
+  hitstop(ms) {
+    ms = ms !== undefined ? ms : 60;
+    const scene = this._scene;
+    scene.physics.world.pause();
+    scene.tweens.pauseAll();
+    scene.time.delayedCall(ms, () => {
+      scene.physics.world.resume();
+      scene.tweens.resumeAll();
+    });
+  }
+
+  screenShake(intensity, duration) {
+    intensity = intensity !== undefined ? intensity : 4;
+    duration  = duration  !== undefined ? duration  : 200;
+    this._scene.cameras.main.shake(duration, intensity / 800);
+  }
+
+  squash(sprite, scaleX, scaleY, duration) {
+    duration = duration !== undefined ? duration : 80;
+    this._scene.tweens.add({
+      targets: sprite,
+      scaleX, scaleY,
+      duration,
+      yoyo: true,
+      ease: 'Sine.easeOut',
+    });
+  }
+
+  setCameraLead(dir) {
+    const cam = this._scene.cameras.main;
+    const target = -dir * 120;
+    this._scene.tweens.add({
+      targets: { val: cam.followOffset.x },
+      val: target,
+      duration: 300,
+      ease: 'Sine.easeOut',
+      onUpdate: (tween, obj) => cam.setFollowOffset(obj.val, 0),
+    });
+  }
+
+  beatPulse(strong) {
+    const cam = this._scene.cameras.main;
+    const alpha = strong ? 0.12 : 0.04;
+    cam.flash(80, 255, 255, 220, false, (cam, progress) => {});
+    // Override flash with custom alpha overlay using a rectangle
+    const rect = this._scene.add.rectangle(
+      RK.WIDTH / 2, RK.HEIGHT / 2, RK.WIDTH, RK.HEIGHT, 0xffffff, alpha
+    ).setScrollFactor(0).setDepth(100);
+    this._scene.tweens.add({
+      targets: rect, alpha: 0, duration: 120, ease: 'Sine.easeOut',
+      onComplete: () => rect.destroy(),
+    });
+  }
+
+  dustBurst(x, y) {
+    this._spawnParticles(x, y, 0xccaa66, 6, 80, 60);
+  }
+
+  impactSpark(x, y) {
+    this._spawnParticles(x, y, 0xffcc44, 4, 100, 80);
+  }
+
+  rollTrail(x, y) {
+    this._spawnParticles(x, y, 0x88bbff, 2, 40, 40);
+  }
+
+  _spawnParticles(x, y, color, count, speed, lifetime) {
+    const scene = this._scene;
+    for (let i = 0; i < count; i++) {
+      const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.8;
+      const spd = speed * (0.6 + Math.random() * 0.8);
+      const size = 3 + Math.random() * 4;
+      const p = scene.add.rectangle(x, y, size, size, color)
+        .setDepth(50).setScrollFactor(1);
+      const vx = Math.cos(angle) * spd;
+      const vy = Math.sin(angle) * spd - 60;
+      scene.tweens.add({
+        targets: p,
+        x: x + vx * 0.5,
+        y: y + vy * 0.5 + 30,
+        alpha: 0,
+        scaleX: 0.1,
+        scaleY: 0.1,
+        duration: lifetime + Math.random() * 80,
+        ease: 'Sine.easeIn',
+        onComplete: () => p.destroy(),
+      });
+    }
+  }
+};

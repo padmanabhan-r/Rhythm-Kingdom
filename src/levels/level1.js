@@ -1,32 +1,64 @@
 // =============================================================================
-//  Rhythm Kingdom — Level 1: First Loop
-//  Tutorial: jump scheduling only. SMALL form, no enemies.
+//  Rhythm Kingdom — Level 1: The Root Gate
+//  Polished intro level. Actions: JUMP + ROLL. No combat.
 // =============================================================================
 
 window.RK.Levels = window.RK.Levels || {};
 
 window.RK.Levels.level1 = {
-  name: 'Level 1: First Loop',
-  startForm: 'SMALL',
+  name: 'The Root Gate',
+  width: 3200,
+  bgColor: 0x0d2318,
   nextLevel: 'level2',
-  hint: 'Place JUMP cards on the timeline to leap over the spike pits!',
-  bgColor: 0x5c94fc,
-  playerStart: { x: 60, y: 380 },
+  playerStart: { x: 80, y: 410 },
+  unlockedActions: ['JUMP', 'ROLL'],
 
   platforms: [
-    { x: 0,   y: 460, w: 200 },   // start platform
-    { x: 280, y: 460, w: 120 },   // gap 1 landing
-    { x: 490, y: 460, w: 120 },   // gap 2 landing
-    { x: 690, y: 460, w: 110 },   // end platform
+    // Section 1: Open jungle path
+    { x: 0,    y: 440, w: 400,  type: 'jungle' },
+    { x: 480,  y: 400, w: 160,  type: 'jungle' },
+    { x: 720,  y: 360, w: 200,  type: 'jungle' },
+
+    // Section 2: Rhythm practice — spaced platforms
+    { x: 1000, y: 330, w: 100,  type: 'jungle' },
+    { x: 1180, y: 290, w: 100,  type: 'jungle' },
+    { x: 1360, y: 330, w: 100,  type: 'jungle' },
+
+    // Section 3: Root cavern — low ceiling forces rolling
+    { x: 1520, y: 420, w: 500,  type: 'jungle' },
+    { x: 1540, y: 310, w: 440,  type: 'ceiling' },
+
+    // Section 4: "Collapsing bridge" — 3 narrow platforms
+    { x: 2100, y: 370, w: 80,   type: 'jungle' },
+    { x: 2250, y: 370, w: 80,   type: 'jungle' },
+    { x: 2400, y: 370, w: 80,   type: 'jungle' },
+
+    // Section 5: Post-checkpoint run to exit
+    { x: 2560, y: 400, w: 640,  type: 'jungle' },
   ],
 
-  spikes: [
-    { x: 200, y: 460 }, { x: 220, y: 460 }, { x: 240, y: 460 }, { x: 260, y: 460 },
-    { x: 410, y: 460 }, { x: 430, y: 460 }, { x: 450, y: 460 }, { x: 470, y: 460 },
-    { x: 620, y: 460 }, { x: 640, y: 460 }, { x: 660, y: 460 },
+  thorns: [
+    { x: 422, y: 450 },
+    { x: 662, y: 450 },
+    { x: 952, y: 450 },
+    { x: 2085, y: 380 },
+    { x: 2230, y: 380 },
+    { x: 2380, y: 380 },
+    { x: 2535, y: 450 },
   ],
 
-  enemies: [],
+  enemies: [
+    { x: 2680, y: 375, type: 'lizard', patrol: [2600, 2850] },
+    { x: 2950, y: 375, type: 'lizard', patrol: [2870, 3080] },
+  ],
+
+  checkpoints: [
+    { x: 2540, y: 360 },
+  ],
+
   pickups: [],
-  exit: { x: 760, y: 424 },
+
+  exit: { x: 3140, y: 380 },
+
+  hint: 'Place JUMP in a beat slot.  ROLL squeezes through low gaps.',
 };

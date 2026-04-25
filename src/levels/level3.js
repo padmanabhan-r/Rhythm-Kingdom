@@ -1,41 +1,52 @@
 // =============================================================================
-//  Rhythm Kingdom — Level 3: Final Track
-//  All three forms. Fire-only enemy, hazard enemy, flower pickup.
+//  Rhythm Kingdom — Level 3: Canopy Heart  [STUB]
+//  New: Punch unlocked. All 4 actions in play.
 // =============================================================================
 
 window.RK.Levels = window.RK.Levels || {};
 
 window.RK.Levels.level3 = {
-  name: 'Level 3: Final Track',
-  startForm: 'BIG',
+  name: 'Canopy Heart',
+  width: 2800,
+  bgColor: 0x081510,
   nextLevel: null,
-  hint: 'Get the flower for FIRE form. Shoot the purple enemy to clear the path!',
-  bgColor: 0x1e0808,
-  playerStart: { x: 60, y: 300 },
+  playerStart: { x: 80, y: 410 },
+  unlockedActions: ['JUMP', 'ROLL', 'COCONUT'],
 
   platforms: [
-    { x: 0,   y: 340, w: 160 },
-    { x: 240, y: 280, w: 120 },   // elevated — flower pickup
-    { x: 420, y: 340, w: 100 },
-    { x: 580, y: 200, w: 220 },   // upper path (fire required)
-    { x: 400, y: 460, w: 200 },   // lower path
-    { x: 650, y: 460, w: 150 },
+    { x: 0,    y: 440, w: 250, type: 'jungle' },
+    { x: 330,  y: 380, w: 150, type: 'jungle' },
+    { x: 560,  y: 310, w: 150, type: 'jungle' },
+    { x: 780,  y: 260, w: 150, type: 'jungle' },
+    { x: 1000, y: 310, w: 200, type: 'jungle' },
+    { x: 1280, y: 380, w: 200, type: 'jungle' },
+    { x: 1560, y: 300, w: 200, type: 'jungle' },
+    { x: 1840, y: 240, w: 200, type: 'jungle' },
+    { x: 2100, y: 300, w: 300, type: 'jungle' },
+    { x: 2480, y: 380, w: 300, type: 'jungle' },
   ],
 
-  spikes: [
-    { x: 160, y: 340 }, { x: 180, y: 340 },
-    { x: 360, y: 460 }, { x: 380, y: 460 },
+  thorns: [
+    { x: 282, y: 450 }, { x: 512, y: 450 }, { x: 742, y: 450 },
   ],
 
   enemies: [
-    { type: 'stomp',    x: 440, y: 320, left: 420, right: 510 },
-    { type: 'fireonly',  x: 620, y: 180, left: 580, right: 790 },
-    { type: 'hazard',   x: 430, y: 440, left: 400, right: 590 },
+    { x: 400,  y: 355, type: 'bat',      patrol: [330, 470] },
+    { x: 840,  y: 235, type: 'guardian', patrol: [780, 920] },
+    { x: 1080, y: 285, type: 'lizard',   patrol: [1000, 1190] },
+    { x: 1890, y: 215, type: 'bat',      patrol: [1840, 2030] },
+    { x: 2180, y: 275, type: 'guardian', patrol: [2100, 2380] },
+  ],
+
+  checkpoints: [
+    { x: 1540, y: 270 },
   ],
 
   pickups: [
-    { type: 'flower', x: 300, y: 255 },
+    { x: 900, y: 235, type: 'relic_shard', unlocks: 'PUNCH' },
   ],
 
-  exit: { x: 770, y: 164 },
+  exit: { x: 2750, y: 360 },
+
+  hint: 'All four beats. Reach the heart of the kingdom.',
 };

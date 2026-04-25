@@ -1,13 +1,13 @@
 // =============================================================================
 //  Rhythm Kingdom — Timeline.js
-//  8-slot action state machine.
+//  4-slot action state machine. Actions gated by unlockedActions[].
 // =============================================================================
 
 window.RK.Timeline = class Timeline {
   constructor() {
     this.slots = new Array(RK.BEAT_COUNT).fill(null);
     this.currentBeat = 0;
-    this.playerForm = 'SMALL';
+    this.unlockedActions = ['JUMP', 'ROLL'];
   }
 
   setSlot(index, action) {
@@ -27,9 +27,17 @@ window.RK.Timeline = class Timeline {
     for (let i = 0; i < this.slots.length; i++) this.slots[i] = null;
   }
 
-  isLegal(action) {
+  setUnlocked(actions) { this.unlockedActions = actions.slice(); }
+
+  unlock(action) {
+    if (!this.unlockedActions.includes(action)) {
+      this.unlockedActions.push(action);
+    }
+  }
+
+  isUnlocked(action) {
     if (!action) return true;
-    return (RK.ALLOWED[this.playerForm] || []).includes(action);
+    return this.unlockedActions.includes(action);
   }
 
   advance() {
@@ -38,26 +46,19 @@ window.RK.Timeline = class Timeline {
 
   getCurrentAction() { return this.slots[this.currentBeat]; }
 
-  setForm(form) { this.playerForm = form; }
-
-  /**
-   * Cycle a slot through: null → allowed[0] → allowed[1] → ... → null
-   */
-  cycleSlot(index, allowedActions) {
+  cycleSlot(index) {
     if (index < 0 || index >= this.slots.length) return;
-    if (!allowedActions || allowedActions.length === 0) {
-      this.slots[index] = null;
-      return;
-    }
+    const allowed = this.unlockedActions;
+    if (!allowed || allowed.length === 0) { this.slots[index] = null; return; }
     const current = this.slots[index];
     if (current === null) {
-      this.slots[index] = allowedActions[0];
+      this.slots[index] = allowed[0];
     } else {
-      const idx = allowedActions.indexOf(current);
-      if (idx === -1 || idx === allowedActions.length - 1) {
+      const idx = allowed.indexOf(current);
+      if (idx === -1 || idx === allowed.length - 1) {
         this.slots[index] = null;
       } else {
-        this.slots[index] = allowedActions[idx + 1];
+        this.slots[index] = allowed[idx + 1];
       }
     }
   }

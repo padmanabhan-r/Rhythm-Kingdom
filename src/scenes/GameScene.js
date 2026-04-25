@@ -1,425 +1,427 @@
 // =============================================================================
 //  Rhythm Kingdom — GameScene.js
-//  Main gameplay scene. Builds level, manages player/enemies/projectiles,
-//  responds to beat events from UIScene.
+//  Main gameplay scene. Jungle world, gorilla, rhythm actions, checkpoints.
 // =============================================================================
-
-const PX = "'Press Start 2P', monospace";
 
 class GameScene extends Phaser.Scene {
   constructor() { super({ key: 'GameScene' }); }
 
   init(data) {
-    this.levelKey = (data && data.level) || 'level1';
-    this.levelData = RK.Levels[this.levelKey];
-    this.mode = 'edit';
-    this._levelComplete = false;
+    this.levelKey   = (data && data.level) || 'level1';
+    this.levelData  = RK.Levels[this.levelKey];
+    this.mode       = 'edit';
+    this._complete  = false;
+    this._checkpointX = null;
+    this._checkpointY = null;
   }
 
   create() {
-    if (!this.levelData) return;
-
+    if (!this.levelData) { console.error('[RK] Missing level:', this.levelKey); return; }
     const ld = this.levelData;
 
-    this.audioMgr = new RK.AudioManager();
-    this.audioMgr._ensureCtx();
-    this.audioMgr.loadSounds();
+    this._audio    = window.RK._audio || new RK.AudioManager();
+    this.timeline  = new RK.Timeline();
+    this.timeline.setUnlocked(ld.unlockedActions || ['JUMP', 'ROLL']);
 
-    this.timeline = new RK.Timeline();
-    this.timeline.setForm(ld.startForm);
+    const levelW = ld.width || RK.WIDTH;
+    this.physics.world.setBounds(0, 0, levelW, RK.PLAY_HEIGHT + 200);
+    this.cameras.main.setBackgroundColor(ld.bgColor || RK.COLORS.BG);
+    this.cameras.main.setBounds(0, 0, levelW, RK.PLAY_HEIGHT);
 
-    this.physics.world.setBounds(0, 0, RK.WIDTH, RK.PLAY_HEIGHT);
-    this.cameras.main.setBackgroundColor(ld.bgColor || 0x5c94fc);
+    this._buildParallax(levelW);
 
-    // Background decorative layers (below everything)
-    this._buildBackground();
-
-    // Level geometry
-    this.platformGroup = this.physics.add.staticGroup();
-    this.spikeGroup    = this.physics.add.staticGroup();
-    this.enemyGroup    = this.add.group();
-    this.pickupGroup   = this.add.group();
-    this.projectiles   = this.add.group();
+    this.platformGroup   = this.physics.add.staticGroup();
+    this.ceilingGroup    = this.physics.add.staticGroup();
+    this.thornGroup      = this.physics.add.staticGroup();
+    this.enemyGroup      = this.add.group();
+    this.pickupGroup     = this.add.group();
+    this.coconutGroup    = this.add.group();
+    this.checkpointGroup = [];
 
     this._buildPlatforms(ld);
-    this._buildSpikes(ld);
+    this._buildThorns(ld);
     this._buildEnemies(ld);
     this._buildPickups(ld);
+    this._buildCheckpoints(ld);
     this._buildExit(ld);
 
-    this.player = new RK.Player(this, ld.playerStart.x, ld.playerStart.y, ld.startForm);
+    this._gameFeel = new RK.GameFeel(this);
 
-    this.physics.add.collider(this.player, this.platformGroup);
-    this.physics.add.collider(this.enemyGroup, this.platformGroup);
-    this.physics.add.collider(this.projectiles, this.platformGroup, (proj) => {
-      if (proj && proj.alive) proj.die();
-    });
+    this.player = new RK.Player(this, ld.playerStart.x, ld.playerStart.y);
+    this.player.unlockedActions = (ld.unlockedActions || ['JUMP', 'ROLL']).slice();
 
-    this.physics.add.overlap(this.player, this.spikeGroup,   () => this._hitPlayer());
-    this.physics.add.overlap(this.player, this.enemyGroup,   (p, e) => this._playerHitEnemy(e));
-    this.physics.add.overlap(this.player, this.pickupGroup,  (p, pk) => this._playerPickup(pk));
-    this.physics.add.overlap(this.player, this.exitZone,     () => this._completeLevel());
-    this.physics.add.overlap(this.projectiles, this.enemyGroup, (pr, en) => this._projHitEnemy(pr, en));
+    this._setupCollisions();
+    this._setupCamera();
+    this._buildHUD(ld);
+    this._bindEvents();
+
+    this._rhythmClock = new RK.RhythmClock(this._audio, this.game.events);
+    // Start immediately — user already gave a gesture (Space on menu)
+    this._audio._ensureCtx();
+    this._rhythmClock.start();
 
     this.cursors = this.input.keyboard.addKeys({
       left:  Phaser.Input.Keyboard.KeyCodes.A,
       right: Phaser.Input.Keyboard.KeyCodes.D,
     });
 
-    this._buildHUD(ld);
+    this.scene.launch('UIScene', { timeline: this.timeline });
+  }
 
-    this.game.events.on('rk_beat',        this._onBeat,       this);
-    this.game.events.on('rk_mode_change', this._onModeChange, this);
-    this.game.events.on('rk_player_fire', this._onPlayerFire, this);
+  // ---------------------------------------------------------------------------
+  //  PARALLAX
+  // ---------------------------------------------------------------------------
 
-    this.scene.launch('UIScene', { startForm: ld.startForm, timeline: this.timeline });
+  _buildParallax(levelW) {
+    // Layer 0: far canopy (tileSprite, scrollFactor=0, updated in update)
+    this._bg0 = this.add.tileSprite(0, 0, RK.WIDTH, 300, 'bg_canopy')
+      .setOrigin(0, 0).setScrollFactor(0).setDepth(-10);
 
-    this.time.delayedCall(100, () => {
-      this.game.events.emit('rk_form_change', { form: this.player.form });
+    // Layer 1: mid ruins (graphics, scrollFactor=0.3)
+    const gMid = this.add.graphics().setDepth(-8).setScrollFactor(0.3);
+    gMid.fillStyle(0x0d2e1a);
+    const colPositions = [60, 160, 280, 420, 560, 700, 860, 1020, 1180, 1340, 1500];
+    colPositions.forEach(cx => {
+      const h = 120 + Math.floor(Math.random() * 80);
+      gMid.fillRect(cx, RK.PLAY_HEIGHT - h, 18, h);
+      gMid.fillStyle(0x142e1a); gMid.fillRect(cx - 4, RK.PLAY_HEIGHT - h, 26, 8);
+      gMid.fillStyle(0x0d2e1a);
     });
-  }
 
-  // ===========================================================================
-  //  Background layers
-  // ===========================================================================
-
-  _buildBackground() {
-    const W  = RK.WIDTH;
-    const H  = RK.PLAY_HEIGHT;
-    const bg = this.add.graphics().setDepth(-3);
-
-    if (this.levelKey === 'level1') {
-      // Distant mountains (soft blue silhouette)
-      bg.fillStyle(0x8ab4f0, 0.65);
-      bg.fillEllipse(130, H - 140, 310, 200);
-      bg.fillEllipse(420, H - 120, 280, 170);
-      bg.fillEllipse(690, H - 150, 300, 200);
-      bg.fillEllipse(820, H - 110, 200, 150);
-
-      // Near rolling hills (green)
-      bg.fillStyle(0x48913e);
-      bg.fillEllipse(70,  H - 65, 260, 150);
-      bg.fillEllipse(330, H - 45, 300, 130);
-      bg.fillEllipse(640, H - 75, 280, 160);
-      bg.fillStyle(0x3a7f32);
-      bg.fillEllipse(200, H - 38, 220, 110);
-      bg.fillEllipse(500, H - 30, 250, 100);
-      bg.fillEllipse(800, H - 45, 180, 110);
-
-      // Ground strip
-      bg.fillStyle(0x52a84c); bg.fillRect(0, H - 28, W, 28);
-      bg.fillStyle(0x8b5e1c); bg.fillRect(0, H - 16, W, 16);
-
-      // Animated clouds
-      this._spawnCloud(48,  26000, 0);
-      this._spawnCloud(78,  34000, 9000);
-      this._spawnCloud(38,  29000, 18000);
-      this._spawnCloud(62,  38000, 24000);
-
-    } else if (this.levelKey === 'level2') {
-      // Dark tree silhouettes at various heights
-      const treeX = [30, 110, 200, 290, 370, 460, 550, 640, 720, 800];
-      const treeH = [180, 220, 160, 250, 190, 210, 170, 240, 200, 180];
-      treeX.forEach((tx, i) => {
-        const th = treeH[i];
-        bg.fillStyle(0x0e2010);
-        bg.fillTriangle(tx, H - 28, tx - 34, H - 28 - th * 0.55, tx + 34, H - 28 - th * 0.55);
-        bg.fillTriangle(tx, H - 28 - th * 0.35, tx - 26, H - 28 - th * 0.8, tx + 26, H - 28 - th * 0.8);
-        bg.fillTriangle(tx, H - 28 - th * 0.6,  tx - 18, H - 28 - th, tx + 18, H - 28 - th);
-        bg.fillStyle(0x0a1808);
-        bg.fillRect(tx - 5, H - 28 - th * 0.55, 10, th * 0.55);
-      });
-
-      // Ground mist layer
-      bg.fillStyle(0x2a4a22, 0.5); bg.fillRect(0, H - 60, W, 60);
-      bg.fillStyle(0x3a5c2a, 0.4); bg.fillRect(0, H - 32, W, 32);
-
-      // Background mushroom accent
-      bg.fillStyle(0x661a1a, 0.5); bg.fillEllipse(180, H - 90, 50, 36);
-      bg.fillStyle(0xeeccaa, 0.4); bg.fillRect(176, H - 72, 8, 44);
-      bg.fillStyle(0x441111, 0.5); bg.fillEllipse(560, H - 75, 40, 28);
-      bg.fillStyle(0xeeccaa, 0.4); bg.fillRect(557, H - 60, 6, 32);
-
-      // Ground strip
-      bg.fillStyle(0x3a6630); bg.fillRect(0, H - 28, W, 28);
-      bg.fillStyle(0x2a4a20); bg.fillRect(0, H - 16, W, 16);
-
-    } else if (this.levelKey === 'level3') {
-      // Stalactites at top
-      const stalX = [40, 110, 190, 270, 360, 440, 530, 610, 700, 770];
-      const stalL = [70,  95,  55,  80,  100, 65,  90,  75,  85,  60];
-      bg.fillStyle(0x2a1010);
-      stalX.forEach((sx, i) => {
-        const sl = stalL[i];
-        bg.fillTriangle(sx, 0, sx - 18, sl, sx + 18, sl);
-      });
-
-      // Lava glow at bottom
-      bg.fillStyle(0xff3300, 0.12); bg.fillRect(0, H - 70, W, 70);
-      bg.fillStyle(0xff5500, 0.08); bg.fillRect(0, H - 45, W, 45);
-      bg.fillStyle(0xff8800, 0.06); bg.fillRect(0, H - 20, W, 20);
-
-      // Stone columns in background
-      bg.fillStyle(0x281010);
-      bg.fillRect(90,  H - 200, 22, 172);
-      bg.fillRect(320, H - 240, 22, 212);
-      bg.fillRect(570, H - 180, 22, 152);
-      bg.fillRect(730, H - 210, 22, 182);
-      // Column caps
-      bg.fillStyle(0x3a1818);
-      bg.fillRect(86,  H - 204, 30, 8);
-      bg.fillRect(316, H - 244, 30, 8);
-      bg.fillRect(566, H - 184, 30, 8);
-      bg.fillRect(726, H - 214, 30, 8);
-
-      // Ground lava strip
-      bg.fillStyle(0x881100); bg.fillRect(0, H - 28, W, 28);
-      bg.fillStyle(0xaa2200, 0.6); bg.fillRect(0, H - 18, W, 18);
-    }
-  }
-
-  _spawnCloud(y, duration, delay) {
-    const g = this.add.graphics().setDepth(-2);
-    g.fillStyle(0xffffff, 0.9);
-    g.fillEllipse(0,    0,  90, 46);
-    g.fillEllipse(30,  -18, 58, 36);
-    g.fillEllipse(-28, -14, 52, 32);
-    g.fillStyle(0xddddff, 0.3);
-    g.fillEllipse(0, 12, 84, 22);
-    g.y = y;
-
-    this.tweens.add({
-      targets:  g,
-      x:        { from: -160, to: RK.WIDTH + 160 },
-      duration,
-      repeat:   -1,
-      delay,
-      ease:     'Linear',
+    // Layer 2: near foreground vines (scrollFactor=0.7)
+    const gNear = this.add.graphics().setDepth(-6).setScrollFactor(0.7);
+    gNear.fillStyle(0x0a2010, 0.6);
+    [0, 200, 450, 700, 950, 1200, 1500, 1800, 2100].forEach(vx => {
+      gNear.fillRect(vx, 0, 8, 80 + Math.floor(Math.random() * 60));
+      gNear.fillRect(vx + 4, 0, 3, 50 + Math.floor(Math.random() * 40));
     });
+
+    // Ambient mist at bottom of play area
+    const mist = this.add.rectangle(0, RK.PLAY_HEIGHT - 30, levelW * 2, 60, RK.COLORS.BG, 0.5)
+      .setOrigin(0, 0).setDepth(-5);
   }
 
-  // ===========================================================================
-  //  Level building
-  // ===========================================================================
+  // ---------------------------------------------------------------------------
+  //  LEVEL BUILDING
+  // ---------------------------------------------------------------------------
 
   _buildPlatforms(ld) {
     ld.platforms.forEach(p => {
-      const w = p.w;
-      const h = 16;
-      const gfx = this.add.graphics().setDepth(1);
-
-      // Grass top
-      gfx.fillStyle(0x52a84c); gfx.fillRect(p.x, p.y, w, 5);
-      gfx.fillStyle(0x70cc60); gfx.fillRect(p.x, p.y, w, 2);          // top highlight
-      gfx.fillStyle(0x3a8a32); gfx.fillRect(p.x, p.y + 4, w, 1);      // grass underline
-
-      // Dirt body
-      gfx.fillStyle(0x8b5e1c); gfx.fillRect(p.x, p.y + 5, w, h - 5);
-      gfx.fillStyle(0xaa7030); gfx.fillRect(p.x, p.y + 5, 2, h - 7);  // left edge highlight
-      gfx.fillStyle(0x5a3c0a); gfx.fillRect(p.x + w - 2, p.y + 5, 2, h - 7); // right edge shadow
-      gfx.fillStyle(0x5a3c0a); gfx.fillRect(p.x, p.y + h - 2, w, 2);  // bottom shadow
-
-      // Brick seam lines
-      gfx.fillStyle(0x7a4e14, 0.5);
-      for (let gx = p.x + 24; gx < p.x + w - 4; gx += 24) {
-        gfx.fillRect(gx, p.y + 6, 1, h - 8);
+      const w = p.w, h = 20, gfx = this.add.graphics().setDepth(1);
+      if (p.type === 'ceiling') {
+        // Invisible ceiling (just visual stone overhang)
+        gfx.fillStyle(0x2a2015); gfx.fillRect(p.x, p.y, w, h);
+        gfx.fillStyle(0x1a1408); gfx.fillRect(p.x, p.y + h - 4, w, 4);
+        // Root detail hanging down
+        gfx.fillStyle(0x1a4020); gfx.fillRect(p.x + 10, p.y + h, 4, 20);
+        gfx.fillRect(p.x + 30, p.y + h, 3, 14); gfx.fillRect(p.x + 60, p.y + h, 5, 18);
+        const body = this.ceilingGroup.create(p.x + w / 2, p.y + h / 2, 'px');
+        body.setDisplaySize(w, h).setAlpha(0).refreshBody();
+        return;
       }
-
-      // Physics body (invisible)
-      const body = this.platformGroup.create(p.x + w / 2, p.y + h / 2, 'platform');
+      // Jungle platform: moss top + carved stone base
+      gfx.fillStyle(0x1a4a22); gfx.fillRect(p.x, p.y, w, 6);
+      gfx.fillStyle(0x228833); gfx.fillRect(p.x + 1, p.y + 1, w - 2, 3);
+      gfx.fillStyle(0x33aa44); gfx.fillRect(p.x + 2, p.y + 1, w - 4, 1);
+      gfx.fillStyle(0x3a2e1a); gfx.fillRect(p.x, p.y + 6, w, h - 6);
+      gfx.fillStyle(0x4a3c26); gfx.fillRect(p.x + 1, p.y + 7, w - 2, 4);
+      gfx.fillStyle(0x2a2015); gfx.fillRect(p.x, p.y + h - 3, w, 3);
+      // Gold rune marks
+      gfx.fillStyle(0xcc9933, 0.5);
+      for (let rx = p.x + 20; rx < p.x + w - 10; rx += 32) {
+        gfx.fillRect(rx, p.y + 9, 8, 2);
+      }
+      // Physics body
+      const body = this.platformGroup.create(p.x + w / 2, p.y + h / 2, 'px');
       body.setDisplaySize(w, h).setAlpha(0).refreshBody();
     });
   }
 
-  _buildSpikes(ld) {
-    ld.spikes.forEach(s => {
+  _buildThorns(ld) {
+    const thorns = ld.thorns || ld.spikes || [];
+    thorns.forEach(s => {
       const gfx = this.add.graphics().setDepth(1);
-
-      // Base plate
-      gfx.fillStyle(0x555566); gfx.fillRect(s.x, s.y + 10, 16, 6);
-      gfx.fillStyle(0x777788); gfx.fillRect(s.x, s.y + 10, 16, 2);
-
-      // Spike body
-      gfx.fillStyle(0xbbbbcc); gfx.fillTriangle(s.x + 8, s.y, s.x + 1, s.y + 12, s.x + 15, s.y + 12);
-      // Highlight strip
-      gfx.fillStyle(0xddddef); gfx.fillTriangle(s.x + 8, s.y + 1, s.x + 10, s.y + 11, s.x + 8, s.y + 1);
-      // Shiny tip
-      gfx.fillStyle(0xffffff); gfx.fillRect(s.x + 7, s.y, 2, 2);
-
-      const body = this.spikeGroup.create(s.x + 8, s.y + 8, 'spike');
-      body.setDisplaySize(16, 16).setAlpha(0).refreshBody();
+      gfx.fillStyle(0x1a5c18); gfx.fillTriangle(s.x + 8, s.y, s.x, s.y + 20, s.x + 16, s.y + 20);
+      gfx.fillStyle(0x228822); gfx.fillTriangle(s.x + 8, s.y + 3, s.x + 2, s.y + 20, s.x + 14, s.y + 20);
+      gfx.fillStyle(0x44cc44); gfx.fillRect(s.x + 7, s.y + 3, 2, 5);
+      const body = this.thornGroup.create(s.x + 8, s.y + 10, 'px');
+      body.setDisplaySize(12, 16).setAlpha(0).refreshBody();
     });
   }
 
   _buildEnemies(ld) {
-    ld.enemies.forEach(e => {
+    (ld.enemies || []).forEach(e => {
       const enemy = new RK.Enemy(this, e.x, e.y, e.type);
-      enemy.setPatrol(e.left, e.right);
+      const patrol = e.patrol || [e.x - 64, e.x + 64];
+      enemy.setPatrol(patrol[0], patrol[1]);
       this.enemyGroup.add(enemy);
     });
   }
 
   _buildPickups(ld) {
-    ld.pickups.forEach(p => {
-      const sprite = this.physics.add.sprite(p.x, p.y, 'pickup_' + p.type);
+    (ld.pickups || []).forEach(p => {
+      const sprite = this.physics.add.sprite(p.x, p.y, 'relic_shard');
       sprite.body.setAllowGravity(false);
       sprite.body.setImmovable(true);
       sprite.setDepth(3);
-      sprite.setData('type', p.type);
+      sprite.setData('unlocks', p.unlocks);
+      // Color tint per unlocked action
+      const tints = { COCONUT: 0xddaa22, PUNCH: 0xff4433 };
+      if (tints[p.unlocks]) sprite.setTint(tints[p.unlocks]);
       this.tweens.add({
-        targets: sprite, y: p.y - 6,
-        duration: 800, ease: 'Sine.easeInOut', yoyo: true, repeat: -1,
+        targets: sprite, y: p.y - 8, angle: 360,
+        duration: 1200, ease: 'Sine.easeInOut', yoyo: true, repeat: -1,
       });
       this.pickupGroup.add(sprite);
     });
   }
 
-  _buildExit(ld) {
-    const ex  = ld.exit;
-    const vis = this.add.sprite(ex.x, ex.y, 'exit_door').setDepth(2);
-    this.tweens.add({
-      targets: vis, alpha: { from: 0.8, to: 1 },
-      duration: 700, ease: 'Sine.easeInOut', yoyo: true, repeat: -1,
+  _buildCheckpoints(ld) {
+    (ld.checkpoints || []).forEach((cp, i) => {
+      const gfx = this.add.graphics().setDepth(2);
+      gfx.fillStyle(0x4a4035); gfx.fillRect(cp.x, cp.y, 24, 40);
+      gfx.fillStyle(0x44ffaa); gfx.fillRect(cp.x + 10, cp.y + 8, 4, 24);
+      gfx.fillRect(cp.x + 8, cp.y + 8, 8, 4);
+      gfx.fillRect(cp.x + 8, cp.y + 20, 8, 4);
+      const zone = this.physics.add.sprite(cp.x + 12, cp.y + 20, 'px');
+      zone.setAlpha(0);
+      if (zone.body) {
+        zone.body.setSize(24, 40).setAllowGravity(false);
+      }
+      zone.setData('cpIndex', i);
+      zone.setData('cpX', cp.x + 12);
+      zone.setData('cpY', cp.y);
+      this.checkpointGroup.push(zone);
     });
-    this.exitZone = this.physics.add.sprite(ex.x, ex.y, 'exit_door');
+  }
+
+  _buildExit(ld) {
+    const ex = ld.exit;
+    this.add.image(ex.x + 24, ex.y - 28, 'exit_arch').setDepth(2);
+    this.tweens.add({
+      targets: this.add.rectangle(ex.x + 24, ex.y - 8, 24, 48, RK.COLORS.JADE, 0.2)
+        .setDepth(2),
+      alpha: { from: 0.1, to: 0.5 },
+      duration: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
+    });
+    this.exitZone = this.physics.add.sprite(ex.x + 24, ex.y - 8, 'px');
     this.exitZone.setAlpha(0);
-    this.exitZone.body.setAllowGravity(false);
-    this.exitZone.body.setImmovable(true);
+    if (this.exitZone.body) {
+      this.exitZone.body.setSize(30, 60).setAllowGravity(false);
+    }
   }
 
   _buildHUD(ld) {
-    this.add.text(RK.WIDTH - 8, 6, ld.name, {
-      fontFamily: PX, fontSize: '8px', color: '#556688',
-    }).setOrigin(1, 0).setDepth(10);
+    const style = { fontSize: '9px', color: '#44ffaa', fontFamily: 'monospace',
+      backgroundColor: '#00000088', padding: { x: 8, y: 4 } };
+    this.add.text(RK.WIDTH - 8, 8, ld.name || '', {
+      fontSize: '9px', color: '#cc9933', fontFamily: 'monospace',
+    }).setOrigin(1, 0).setDepth(10).setScrollFactor(0);
 
     if (ld.hint) {
-      const hint = this.add.text(RK.WIDTH / 2, 12, ld.hint, {
-        fontFamily: PX, fontSize: '8px', color: '#ccffaa',
-        backgroundColor: '#00000099', padding: { x: 10, y: 6 },
-      }).setOrigin(0.5, 0).setDepth(10);
-
-      this.time.delayedCall(4000, () => {
-        this.tweens.add({ targets: hint, alpha: 0, duration: 700, onComplete: () => hint.destroy() });
+      const hint = this.add.text(RK.WIDTH / 2, 10, ld.hint, style)
+        .setOrigin(0.5, 0).setDepth(10).setScrollFactor(0);
+      this.time.delayedCall(5000, () => {
+        this.tweens.add({ targets: hint, alpha: 0, duration: 800, onComplete: () => hint.destroy() });
       });
     }
 
-    this.add.text(6, RK.PLAY_HEIGHT - 14, 'SPACE = Edit/Play  |  A/D = Move', {
-      fontFamily: PX, fontSize: '7px', color: '#334455',
-    }).setDepth(10);
+    this.add.text(6, RK.PLAY_HEIGHT - 12, 'A/D move  SPACE edit/play', {
+      fontSize: '8px', color: '#334444', fontFamily: 'monospace',
+    }).setDepth(10).setScrollFactor(0);
   }
 
-  // ===========================================================================
-  //  Update
-  // ===========================================================================
+  // ---------------------------------------------------------------------------
+  //  COLLISIONS
+  // ---------------------------------------------------------------------------
+
+  _setupCollisions() {
+    this.physics.add.collider(this.player, this.platformGroup);
+    this.physics.add.collider(this.player, this.ceilingGroup);
+    this.physics.add.collider(this.enemyGroup, this.platformGroup);
+    this.physics.add.collider(this.coconutGroup, this.platformGroup, (c) => { if (c.alive) c.die(); });
+
+    this.physics.add.overlap(this.player, this.thornGroup,     () => this._playerHitThorn());
+    this.physics.add.overlap(this.player, this.enemyGroup,     (p, e) => this._playerHitEnemy(e));
+    this.physics.add.overlap(this.player, this.pickupGroup,    (p, pk) => this._playerPickup(pk));
+    this.physics.add.overlap(this.player, this.exitZone,       () => this._completeLevel());
+    this.physics.add.overlap(this.coconutGroup, this.enemyGroup, (c, e) => this._coconutHitEnemy(c, e));
+
+    this.checkpointGroup.forEach(zone => {
+      this.physics.add.overlap(this.player, zone, (p, z) => this._triggerCheckpoint(z));
+    });
+  }
+
+  _setupCamera() {
+    const ld = this.levelData;
+    const levelW = ld.width || RK.WIDTH;
+    this.cameras.main.startFollow(this.player, true, 0.08, 0.08);
+    this.cameras.main.setFollowOffset(0, 40);
+  }
+
+  // ---------------------------------------------------------------------------
+  //  EVENTS
+  // ---------------------------------------------------------------------------
+
+  _bindEvents() {
+    this.game.events.on('rk_beat',          this._onBeat,          this);
+    this.game.events.on('rk_mode_change',   this._onModeChange,    this);
+    this.game.events.on('rk_spawn_coconut', this._onSpawnCoconut,  this);
+    this.game.events.on('rk_player_punch',  this._onPlayerPunch,   this);
+    this.game.events.on('rk_player_land',   this._onPlayerLand,    this);
+    this.game.events.on('rk_player_roll',   this._onPlayerRoll,    this);
+    this.game.events.on('rk_player_hit',    this._onPlayerHit,     this);
+    this.game.events.on('rk_player_dead',   this._onPlayerDead,    this);
+  }
+
+  // ---------------------------------------------------------------------------
+  //  UPDATE
+  // ---------------------------------------------------------------------------
 
   update(time, delta) {
-    if (!this.player || this.player.dead) return;
+    if (!this.player) return;
 
-    if (this.mode === 'play') {
+    // Parallax far layer update
+    if (this._bg0) this._bg0.tilePositionX = this.cameras.main.scrollX * 0.08;
+
+    if (this.mode === 'play' && !this.player.dead) {
       this.player.update(delta, this.cursors);
       this.enemyGroup.getChildren().forEach(e => { if (e.alive) e.update(delta); });
-      this.projectiles.getChildren().slice().forEach(p => { if (p.alive) p.update(); });
-    } else {
-      if (this.player.body) this.player.body.setVelocityX(0);
+      this.coconutGroup.getChildren().slice().forEach(c => { if (c.alive) c.update(); });
+
+      // Camera lead
+      if (this.player.body) {
+        const dir = this.player.facingRight ? 1 : -1;
+        this._gameFeel.setCameraLead(dir);
+      }
+
+      // Fall death
+      if (this.player.y > RK.PLAY_HEIGHT + 80) this.player.die();
     }
   }
 
-  // ===========================================================================
-  //  Beat execution
-  // ===========================================================================
+  // ---------------------------------------------------------------------------
+  //  BEAT EXECUTION
+  // ---------------------------------------------------------------------------
 
   _onBeat(beatIndex) {
-    if (this.mode !== 'play' || !this.player || this.player.dead) return;
+    if (!this.player || this.player.dead) return;
 
     const action = this.timeline.getSlot(beatIndex);
+    if (!action) return;
 
-    if (!action) {
-      this.audioMgr.playMetronomeTick();
+    if (!this.player.isActionUnlocked(action)) {
+      if (this.mode === 'play') {
+        this._audio.play('invalid_beat', 0.4);
+        this.game.events.emit('rk_slot_invalid', beatIndex);
+      }
       return;
     }
 
-    if (!this.timeline.isLegal(action)) {
-      this.audioMgr.playInvalidBeat();
-      this.game.events.emit('rk_slot_invalid', beatIndex);
-      return;
-    }
-
-    if (action === 'JUMP')  this.player.doJump();
-    if (action === 'STOMP') this.player.doStomp();
-    if (action === 'FIRE')  this.player.doFire();
-
-    this.audioMgr.playActionSound(action, this.player.form);
+    // SFX plays in both edit + play mode — composition feel
+    const SFX = { JUMP: 'jump', ROLL: 'roll', COCONUT: 'coconut_throw', PUNCH: 'punch' };
+    this._audio.play(SFX[action], 0.6);
     this.game.events.emit('rk_slot_success', beatIndex);
+
+    // Gameplay actions only execute in play mode
+    if (this.mode !== 'play') return;
+
+    switch (action) {
+      case 'JUMP':    this.player.doJump();    break;
+      case 'ROLL':    this.player.doRoll();    break;
+      case 'COCONUT': this.player.doCoconut(); break;
+      case 'PUNCH':   this.player.doPunch();   break;
+    }
   }
 
   _onModeChange(data) {
     this.mode = data.mode;
-    if (this.mode === 'edit' && this.player && !this.player.dead) {
-      this.player.body.setVelocityX(0);
-    }
   }
 
-  _onPlayerFire(data) {
-    const proj = new RK.Projectile(this, data.x, data.y, data.dir);
-    this.projectiles.add(proj);
+  // ---------------------------------------------------------------------------
+  //  ACTION HANDLERS
+  // ---------------------------------------------------------------------------
+
+  _onSpawnCoconut(data) {
+    const c = new RK.Coconut(this, data.x, data.y, data.dir);
+    this.coconutGroup.add(c);
   }
 
-  // ===========================================================================
-  //  Collision handlers
-  // ===========================================================================
-
-  _hitPlayer() {
-    if (this.player.invincible || this.player.dead) return;
-
-    const result = this.player.downgrade();
-    if (result === 'dead') {
-      this._killPlayer();
-    } else {
-      this.audioMgr.playHit();
-      this.cameras.main.shake(120, 0.008);
-      this.player.invincible = true;
-      this.player.invincibleTimer = 1500;
-      this.game.events.emit('rk_form_change', { form: this.player.form });
-      this.timeline.setForm(this.player.form);
-    }
-  }
-
-  _killPlayer() {
-    if (!this.player || this.player.dead) return;
-    this.player.dead = true;
-    this.audioMgr.playDeath();
-    this.cameras.main.flash(200, 255, 60, 60);
-    this.game.events.emit('rk_player_dead');
-
-    this.add.text(RK.WIDTH / 2, RK.PLAY_HEIGHT / 2 - 20, 'GAME OVER', {
-      fontFamily: PX, fontSize: '28px', color: '#ff4444',
-      stroke: '#660000', strokeThickness: 5, align: 'center',
-    }).setOrigin(0.5).setDepth(30);
-
-    this.add.text(RK.WIDTH / 2, RK.PLAY_HEIGHT / 2 + 20, 'Restarting…', {
-      fontFamily: PX, fontSize: '12px', color: '#ffaaaa',
-    }).setOrigin(0.5).setDepth(30);
-
-    this.time.delayedCall(1800, () => {
-      this.scene.stop('UIScene');
-      this.scene.restart({ level: this.levelKey });
+  _onPlayerPunch(data) {
+    // Check for enemies in punch range
+    let hit = false;
+    this.enemyGroup.getChildren().forEach(e => {
+      if (!e.alive) return;
+      const dx = Math.abs(e.x - data.x);
+      const dy = Math.abs(e.y - data.y);
+      if (dx < 60 && dy < 40 && e.canPunch()) {
+        e.die(); hit = true;
+        this._gameFeel.impactSpark(e.x, e.y);
+      }
     });
+    if (hit) {
+      this._gameFeel.hitstop(60);
+      this._gameFeel.screenShake(3, 150);
+    }
+  }
+
+  _onPlayerLand(data) {
+    this._gameFeel.dustBurst(data.x, data.y + 14);
+  }
+
+  _onPlayerRoll(data) {
+    this._gameFeel.rollTrail(data.x, data.y);
+  }
+
+  _onPlayerHit() {
+    this._audio.play('hit', 0.7);
+    this._gameFeel.screenShake(4, 200);
+  }
+
+  _onPlayerDead() {
+    this._audio.play('death', 0.8);
+    this.cameras.main.flash(200, 255, 60, 60);
+    if (this._rhythmClock) this._rhythmClock.stop();
+
+    if (this._checkpointX !== null) {
+      // Respawn at checkpoint
+      this.time.delayedCall(600, () => {
+        this.player.revive(this._checkpointX, this._checkpointY - 40);
+        this.timeline.clearAll();
+        this.game.events.emit('rk_mode_change', { mode: 'edit' });
+      });
+    } else {
+      // Full restart
+      this.add.text(RK.WIDTH / 2, RK.PLAY_HEIGHT / 2, 'Gone…', {
+        fontSize: '28px', color: '#ff4444', fontFamily: 'monospace',
+        stroke: '#660000', strokeThickness: 4,
+      }).setOrigin(0.5).setDepth(30).setScrollFactor(0);
+
+      this.time.delayedCall(1600, () => {
+        this.scene.stop('UIScene');
+        this.scene.restart({ level: this.levelKey });
+      });
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  //  COLLISIONS
+  // ---------------------------------------------------------------------------
+
+  _playerHitThorn() {
+    if (this.player.isRolling) return; // rolling is safe
+    this.player.takeDamage();
   }
 
   _playerHitEnemy(enemy) {
     if (!enemy || !enemy.alive || this.player.invincible || this.player.dead) return;
-
-    const vy    = this.player.body.velocity.y;
-    const falling = vy > 80;
-    const above   = this.player.body.bottom <= enemy.body.top + 10;
-
-    if (falling && above && enemy.canStomp()) {
-      enemy.die('stomp');
-      this.player.body.setVelocityY(-250);
-      this.audioMgr.playActionSound('STOMP', this.player.form);
-    } else {
-      this._hitPlayer();
+    // Rolling through lizard = kill
+    if (this.player.isRolling && enemy.canRoll()) {
+      enemy.die();
+      this._gameFeel.dustBurst(enemy.x, enemy.y);
+      return;
     }
+    this.player.takeDamage(enemy.x < this.player.x ? 1 : -1);
   }
 
   _playerPickup(pickup) {
@@ -427,58 +429,64 @@ class GameScene extends Phaser.Scene {
     pickup.setActive(false).setVisible(false);
     if (pickup.body) pickup.body.enable = false;
 
-    const type = pickup.getData('type');
-    this.audioMgr.playPickup(type);
-
-    const F = RK.FORMS;
-    if (type === 'mushroom' && this.player.form === F.SMALL) {
-      this.player.upgrade();
-    } else if (type === 'flower') {
-      if (this.player.form === F.SMALL) { this.player.upgrade(); this.player.upgrade(); }
-      else if (this.player.form === F.BIG) { this.player.upgrade(); }
+    const unlocks = pickup.getData('unlocks');
+    if (unlocks) {
+      this.player.unlock(unlocks);
+      this.timeline.unlock(unlocks);
+      this.game.events.emit('rk_action_unlock', { action: unlocks });
+      this._audio.play('unlock_action', 0.8);
+      this._gameFeel.impactSpark(pickup.x, pickup.y);
     }
-
-    this.game.events.emit('rk_form_change', { form: this.player.form });
-    this.timeline.setForm(this.player.form);
 
     this.time.delayedCall(16, () => { if (pickup) pickup.destroy(); });
   }
 
-  _projHitEnemy(proj, enemy) {
-    if (!proj || !proj.alive || !enemy || !enemy.alive) return;
-    proj.die();
-    if (enemy.type === 'stomp' || enemy.type === 'fireonly') enemy.die('fire');
+  _coconutHitEnemy(coconut, enemy) {
+    if (!coconut || !coconut.alive || !enemy || !enemy.alive) return;
+    coconut.die();
+    if (enemy.canCoconut()) {
+      enemy.die();
+      this._audio.play('coconut_impact', 0.7);
+      this._gameFeel.dustBurst(enemy.x, enemy.y);
+    }
   }
 
-  // ===========================================================================
-  //  Level completion
-  // ===========================================================================
+  _triggerCheckpoint(zone) {
+    const cpX = zone.getData('cpX');
+    const cpY = zone.getData('cpY');
+    if (cpX === this._checkpointX) return; // already activated
+    this._checkpointX = cpX;
+    this._checkpointY = cpY;
+    this._audio.play('checkpoint', 0.7);
+    // Glow flash at checkpoint
+    const flash = this.add.rectangle(cpX, cpY, 60, 100, RK.COLORS.JADE, 0.5).setDepth(5);
+    this.tweens.add({ targets: flash, alpha: 0, duration: 600, onComplete: () => flash.destroy() });
+  }
+
+  // ---------------------------------------------------------------------------
+  //  LEVEL COMPLETE
+  // ---------------------------------------------------------------------------
 
   _completeLevel() {
-    if (this._levelComplete) return;
-    this._levelComplete = true;
+    if (this._complete) return;
+    this._complete = true;
+    if (this._rhythmClock) this._rhythmClock.stop();
 
-    this.audioMgr.playLevelComplete();
+    this._audio.play('level_complete', 0.9);
     this.cameras.main.flash(300, 255, 240, 100);
     this.game.events.emit('rk_level_complete');
 
-    const banner = this.add.text(RK.WIDTH / 2, RK.PLAY_HEIGHT / 2 - 30, 'LEVEL\nCOMPLETE!', {
-      fontFamily: PX, fontSize: '28px', color: '#ffcc00',
-      stroke: '#aa7700', strokeThickness: 5, align: 'center',
-    }).setOrigin(0.5).setDepth(30);
-
+    const banner = this.add.text(RK.WIDTH / 2, RK.PLAY_HEIGHT / 2 - 40, 'LEVEL COMPLETE', {
+      fontSize: '24px', color: '#ffcc44', fontFamily: 'monospace',
+      stroke: '#885500', strokeThickness: 4,
+    }).setOrigin(0.5).setDepth(30).setScrollFactor(0);
     this.tweens.add({ targets: banner, scale: { from: 0.2, to: 1 }, duration: 400, ease: 'Back.easeOut' });
 
-    const nextLevel = this.levelData.nextLevel;
-    const sub = nextLevel ? 'Get ready for the next level…' : 'You beat all 3 levels!';
-    this.add.text(RK.WIDTH / 2, RK.PLAY_HEIGHT / 2 + 40, sub, {
-      fontFamily: PX, fontSize: '10px', color: '#ffffff',
-    }).setOrigin(0.5).setDepth(30);
-
+    const next = this.levelData.nextLevel;
     this.time.delayedCall(2400, () => {
       this.scene.stop('UIScene');
-      if (nextLevel) {
-        this.scene.start('GameScene', { level: nextLevel });
+      if (next) {
+        this.scene.start('GameScene', { level: next });
       } else {
         this._showWinScreen();
       }
@@ -486,40 +494,33 @@ class GameScene extends Phaser.Scene {
   }
 
   _showWinScreen() {
-    const W = RK.WIDTH;
-    const H = RK.PLAY_HEIGHT;
-    this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.75).setDepth(28);
-
-    this.add.text(W / 2, H / 2 - 70, 'YOU WIN!', {
-      fontFamily: PX, fontSize: '40px', color: '#ffcc00',
-      stroke: '#ff8800', strokeThickness: 6,
-    }).setOrigin(0.5).setDepth(29);
-
+    const W = RK.WIDTH, H = RK.PLAY_HEIGHT;
+    this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.8).setDepth(28).setScrollFactor(0);
+    this.add.text(W / 2, H / 2 - 60, 'YOU DID IT', {
+      fontSize: '36px', color: '#ffcc44', fontFamily: 'monospace',
+    }).setOrigin(0.5).setDepth(29).setScrollFactor(0);
     this.add.text(W / 2, H / 2,
-      'Movement is manual.\nActions are rhythm-locked.\nPower-ups unlock new notes.', {
-        fontFamily: PX, fontSize: '10px', color: '#aaaaff',
+      'Movement is manual.\nRhythm is power.\nYou are the beat.', {
+        fontSize: '11px', color: '#44ffaa', fontFamily: 'monospace',
         align: 'center', lineSpacing: 8,
-      }).setOrigin(0.5).setDepth(29);
-
-    const prompt = this.add.text(W / 2, H / 2 + 80, 'SPACE  to return to menu', {
-      fontFamily: PX, fontSize: '10px', color: '#ffffff',
-    }).setOrigin(0.5).setDepth(29);
-
-    this.tweens.add({
-      targets: prompt, alpha: { from: 1, to: 0 },
-      duration: 550, ease: 'Sine.easeInOut', yoyo: true, repeat: -1,
-    });
-
+      }).setOrigin(0.5).setDepth(29).setScrollFactor(0);
+    const p = this.add.text(W / 2, H / 2 + 80, 'SPACE to menu', {
+      fontSize: '11px', color: '#ffffff', fontFamily: 'monospace',
+    }).setOrigin(0.5).setDepth(29).setScrollFactor(0);
+    this.tweens.add({ targets: p, alpha: 0, duration: 550, yoyo: true, repeat: -1 });
     this.input.keyboard.once('keydown-SPACE', () => this.scene.start('MenuScene'));
   }
 
-  // ===========================================================================
-  //  Cleanup
-  // ===========================================================================
-
+  // ---------------------------------------------------------------------------
   shutdown() {
-    this.game.events.off('rk_beat',        this._onBeat,       this);
-    this.game.events.off('rk_mode_change', this._onModeChange, this);
-    this.game.events.off('rk_player_fire', this._onPlayerFire, this);
+    if (this._rhythmClock) this._rhythmClock.stop();
+    this.game.events.off('rk_beat',          this._onBeat,          this);
+    this.game.events.off('rk_mode_change',   this._onModeChange,    this);
+    this.game.events.off('rk_spawn_coconut', this._onSpawnCoconut,  this);
+    this.game.events.off('rk_player_punch',  this._onPlayerPunch,   this);
+    this.game.events.off('rk_player_land',   this._onPlayerLand,    this);
+    this.game.events.off('rk_player_roll',   this._onPlayerRoll,    this);
+    this.game.events.off('rk_player_hit',    this._onPlayerHit,     this);
+    this.game.events.off('rk_player_dead',   this._onPlayerDead,    this);
   }
 }

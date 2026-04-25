@@ -1,6 +1,6 @@
 // =============================================================================
 //  Rhythm Kingdom — main.js
-//  Phaser 3 game config and entry point. Loaded last.
+//  Phaser 3 game config. Loaded last.
 // =============================================================================
 
 (function () {
@@ -15,13 +15,12 @@
     type: Phaser.AUTO,
     width: RK.WIDTH,
     height: RK.HEIGHT,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#0d2318',
     parent: 'game-container',
 
     render: {
-      antialias: false,
-      pixelArt: true,
-      roundPixels: true,
+      antialias: true,
+      pixelArt: false,
     },
 
     physics: {
@@ -36,7 +35,7 @@
 
     scale: {
       mode: Phaser.Scale.FIT,
-      autoCenter: Phaser.Scale.NO_CENTER,
+      autoCenter: Phaser.Scale.CENTER_BOTH,
       width: RK.WIDTH,
       height: RK.HEIGHT,
     },

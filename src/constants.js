@@ -4,36 +4,45 @@
 // =============================================================================
 
 window.RK = {
-  WIDTH: 800,
-  HEIGHT: 600,
+  WIDTH:       800,
+  HEIGHT:      600,
   PLAY_HEIGHT: 480,
-  UI_HEIGHT: 120,
+  UI_HEIGHT:   120,
+
   BPM: 120,
-  BEAT_MS: 500,          // 60000 / 120
-  BEAT_COUNT: 8,
+  BEAT_MS: 500,
+  BEAT_COUNT: 4,
+
   GRAVITY: 900,
-  PLAYER_SPEED: 180,
-  JUMP_FORCE: -500,
+  PLAYER_SPEED: 200,
+  JUMP_FORCE: -550,
   COYOTE_MS: 150,
-  PROJ_SPEED: 300,
+  COCONUT_SPEED: 250,
 
-  FORMS:   { SMALL: 'SMALL', BIG: 'BIG', FIRE: 'FIRE' },
-  ACTIONS: { JUMP: 'JUMP', STOMP: 'STOMP', FIRE: 'FIRE' },
+  ACTIONS: { JUMP: 'JUMP', ROLL: 'ROLL', COCONUT: 'COCONUT', PUNCH: 'PUNCH' },
 
-  ALLOWED: {
-    SMALL: ['JUMP'],
-    BIG:   ['JUMP', 'STOMP'],
-    FIRE:  ['JUMP', 'STOMP', 'FIRE'],
+  ACTION_COLORS: {
+    JUMP:    0x44bb66,
+    ROLL:    0x4488ff,
+    COCONUT: 0xddaa22,
+    PUNCH:   0xff4433,
   },
 
-  CARD_COLORS: { JUMP: 0x44cc44, STOMP: 0xddaa00, FIRE: 0xff4422 },
-  FORM_TINTS:  { SMALL: 0x4488ff, BIG: 0xff4444, FIRE: 0xff8800 },
-
-  HITBOX: {
-    SMALL: { w: 14, h: 18 },
-    BIG:   { w: 16, h: 28 },
-    FIRE:  { w: 16, h: 28 },
+  COLORS: {
+    BG:      0x0d2318,
+    TEAL:    0x1a4a2a,
+    AMBER:   0xcc8833,
+    JADE:    0x44ffaa,
+    GOLD:    0xffcc44,
+    DANGER:  0xcc2222,
+    STONE:   0x3a2e1a,
+    UI_GOLD: 0xcc9933,
   },
+
+  PLAYER_W: 22,
+  PLAYER_H: 32,
+  ROLL_W:   22,
+  ROLL_H:   18,
 
   // Populated by level files
   Levels: {},

@@ -1,203 +1,168 @@
 // =============================================================================
 //  Rhythm Kingdom — MenuScene.js
-//  Title screen. Sky gradient, rolling hills, animated clouds, pixel-font title.
+//  Jungle night title screen. Moonlit atmosphere, fireflies, gorilla silhouette.
 // =============================================================================
 
-const _PX = "'Press Start 2P', monospace";
-
 class MenuScene extends Phaser.Scene {
-  constructor() {
-    super({ key: 'MenuScene' });
-    this._clouds = [];
-  }
+  constructor() { super({ key: 'MenuScene' }); }
 
   create() {
-    const W = RK.WIDTH;
-    const H = RK.HEIGHT;
-
-    // ---- Background ----
+    const W = RK.WIDTH, H = RK.HEIGHT;
     const bg = this.add.graphics();
 
-    // Sky gradient (drawn as horizontal bands, light→deeper blue)
+    // Deep jungle night sky — gradient bands
     const bands = [
-      [0,   60,  0x8ec5ff],
-      [60,  120, 0x70aeff],
-      [120, 200, 0x5c94fc],
-      [200, 360, 0x4880f0],
-      [360, 480, 0x3a6cdd],
+      [0,   80,  0x020d06],
+      [80,  200, 0x051a0e],
+      [200, 340, 0x0a2a18],
+      [340, 480, 0x0d2318],
     ];
-    bands.forEach(([y1, y2, col]) => {
-      bg.fillStyle(col);
-      bg.fillRect(0, y1, W, y2 - y1);
-    });
-    // Below play area (UI panel zone): keep dark
-    bg.fillStyle(0x0c0c24);
-    bg.fillRect(0, 480, W, H - 480);
+    bands.forEach(([y1, y2, col]) => { bg.fillStyle(col); bg.fillRect(0, y1, W, y2 - y1); });
+    // UI panel area
+    bg.fillStyle(0x1a140e); bg.fillRect(0, 480, W, H - 480);
+    bg.fillStyle(0xcc9933); bg.fillRect(0, 480, W, 2);
 
-    // Distant mountains (misty blue)
-    bg.fillStyle(0x7aaef0, 0.6);
-    bg.fillEllipse(130, 400, 320, 210);
-    bg.fillEllipse(420, 380, 290, 190);
-    bg.fillEllipse(700, 410, 310, 210);
-    bg.fillEllipse(830, 385, 220, 170);
+    // Moon
+    bg.fillStyle(0xeeffee, 0.12); bg.fillCircle(620, 60, 90);
+    bg.fillStyle(0xeeffee, 0.18); bg.fillCircle(620, 60, 55);
+    bg.fillStyle(0xeeffee, 0.7);  bg.fillCircle(620, 60, 38);
+    // Moon light shaft
+    bg.fillStyle(0xaaffcc, 0.04); bg.fillTriangle(540, 60, 700, 60, 560, 480);
 
-    // Near hills (green)
-    bg.fillStyle(0x48913e);
-    bg.fillEllipse(70,  430, 270, 160);
-    bg.fillEllipse(340, 445, 310, 140);
-    bg.fillEllipse(650, 435, 290, 160);
-    bg.fillStyle(0x3a7f32);
-    bg.fillEllipse(200, 450, 230, 120);
-    bg.fillEllipse(510, 458, 260, 110);
-    bg.fillEllipse(820, 448, 200, 120);
-
-    // Ground strip
-    bg.fillStyle(0x52a84c); bg.fillRect(0, 454, W, 26);
-    bg.fillStyle(0x8b5e1c); bg.fillRect(0, 466, W, 14);
-
-    // Ground decorations (small tufts)
-    [60, 150, 290, 440, 560, 680, 760].forEach(gx => {
-      bg.fillStyle(0x66cc44);
-      bg.fillTriangle(gx, 454, gx - 5, 462, gx + 5, 462);
-      bg.fillTriangle(gx + 7, 456, gx + 2, 463, gx + 12, 463);
+    // Distant jungle canopy silhouette
+    bg.fillStyle(0x0a2318);
+    [50, 140, 240, 360, 480, 600, 700, 790].forEach((cx, i) => {
+      const h = 100 + (i % 3) * 40;
+      bg.fillEllipse(cx, 380 - h / 2, 90, h);
     });
 
-    // Accent line at top
-    bg.fillStyle(0xffcc00); bg.fillRect(0, 0, W, 3);
+    // Mid-distance tree trunks
+    bg.fillStyle(0x061408);
+    [40, 170, 320, 460, 590, 730].forEach(tx => {
+      bg.fillRect(tx, 300, 6, 200);
+    });
 
-    // ---- Animated clouds ----
-    this._spawnCloud(W, 48,  22000, 0);
-    this._spawnCloud(W, 82,  30000, 7000);
-    this._spawnCloud(W, 36,  26000, 14000);
-    this._spawnCloud(W, 65,  35000, 21000);
+    // Ground mist
+    bg.fillStyle(0x0d2318, 0.8); bg.fillRect(0, 430, W, 50);
+    bg.fillStyle(0x0a1a10, 0.6); bg.fillRect(0, 450, W, 30);
 
-    // ---- Title block ----
+    // Ground
+    bg.fillStyle(0x1a4a22); bg.fillRect(0, 454, W, 26);
+    bg.fillStyle(0x0d2318); bg.fillRect(0, 466, W, 14);
+
+    // Foreground root shapes
+    bg.fillStyle(0x0a2010);
+    bg.fillRect(0, 440, 60, 40); bg.fillRect(720, 440, 80, 40);
+    bg.fillTriangle(0, 440, 50, 440, 0, 480);
+    bg.fillTriangle(800, 440, 750, 440, 800, 480);
+
+    // Gorilla silhouette (bottom right, dark)
+    bg.fillStyle(0x0a1808);
+    bg.fillCircle(740, 450, 16); bg.fillEllipse(740, 468, 28, 22);
+    bg.fillEllipse(728, 462, 8, 14); bg.fillEllipse(752, 462, 8, 14);
+
+    // ---- Fireflies (animated dots) ----
+    this._fireflies = [];
+    for (let i = 0; i < 12; i++) {
+      const ff = this.add.circle(
+        80 + Math.random() * 640,
+        100 + Math.random() * 300,
+        2, 0x88ffaa
+      );
+      this.tweens.add({
+        targets: ff,
+        x: ff.x + (Math.random() - 0.5) * 120,
+        y: ff.y + (Math.random() - 0.5) * 80,
+        alpha: { from: 0.8, to: 0.1 },
+        duration: 1200 + Math.random() * 1800,
+        ease: 'Sine.easeInOut',
+        yoyo: true, repeat: -1,
+        delay: Math.random() * 2000,
+      });
+      this._fireflies.push(ff);
+    }
+
+    // ---- Title ----
     const titleBg = this.add.graphics();
-    titleBg.fillStyle(0x000000, 0.45);
-    titleBg.fillRect(W / 2 - 220, 90, 440, 110);
-    titleBg.lineStyle(3, 0xffcc00);
-    titleBg.strokeRect(W / 2 - 220, 90, 440, 110);
-    titleBg.lineStyle(1, 0xff8800);
-    titleBg.strokeRect(W / 2 - 217, 93, 434, 104);
+    titleBg.fillStyle(0x000000, 0.55);
+    titleBg.fillRoundedRect(W / 2 - 230, 80, 460, 130, 8);
+    titleBg.lineStyle(2, 0xcc9933);
+    titleBg.strokeRoundedRect(W / 2 - 230, 80, 460, 130, 8);
+    titleBg.lineStyle(1, 0x44ffaa, 0.4);
+    titleBg.strokeRoundedRect(W / 2 - 226, 84, 452, 122, 6);
 
-    const titleLine1 = this.add.text(W / 2, 112, 'RHYTHM', {
-      fontFamily: _PX, fontSize: '36px', color: '#ffcc00',
-      stroke: '#884400', strokeThickness: 6,
-      shadow: { offsetX: 4, offsetY: 4, color: '#000000', blur: 0, fill: true },
+    const t1 = this.add.text(W / 2, 108, 'RHYTHM', {
+      fontSize: '44px', color: '#ffcc44', fontFamily: 'monospace',
+      fontStyle: 'bold', stroke: '#885500', strokeThickness: 5,
     }).setOrigin(0.5);
 
-    const titleLine2 = this.add.text(W / 2, 158, 'KINGDOM', {
-      fontFamily: _PX, fontSize: '36px', color: '#ff8800',
-      stroke: '#441100', strokeThickness: 6,
-      shadow: { offsetX: 4, offsetY: 4, color: '#000000', blur: 0, fill: true },
+    const t2 = this.add.text(W / 2, 160, 'KINGDOM', {
+      fontSize: '36px', color: '#44ffaa', fontFamily: 'monospace',
+      fontStyle: 'bold', stroke: '#005533', strokeThickness: 4,
+    }).setOrigin(0.5);
+
+    const tagline = this.add.text(W / 2, 198, "A Gorilla's Journey", {
+      fontSize: '13px', color: '#cc8833', fontFamily: 'monospace', fontStyle: 'italic',
     }).setOrigin(0.5);
 
     this.tweens.add({
-      targets: [titleLine1, titleLine2, titleBg],
-      y: '-=7', duration: 1600,
+      targets: [t1, t2, tagline, titleBg],
+      y: '-=6', duration: 1800,
       ease: 'Sine.easeInOut', yoyo: true, repeat: -1,
     });
 
-    // ---- Form legend ----
-    const legendY = 238;
-    this.add.text(W / 2, legendY - 16, '— POWER-UP FORMS —', {
-      fontFamily: _PX, fontSize: '8px', color: '#ccddff',
-    }).setOrigin(0.5);
-
-    const forms = [
-      { label: 'SMALL', color: '#4488ff', actions: 'JUMP' },
-      { label: 'BIG',   color: '#ff4444', actions: 'JUMP + STOMP' },
-      { label: 'FIRE',  color: '#ff8800', actions: 'JUMP+STOMP+FIRE' },
-    ];
-    forms.forEach((f, i) => {
-      const cx = 170 + i * 155;
-      const dot = this.add.circle(cx - 32, legendY + 12, 6, parseInt(f.color.replace('#', ''), 16));
-      dot.setStrokeStyle(1, 0x000000);
-      this.add.text(cx - 20, legendY + 4, f.label, {
-        fontFamily: _PX, fontSize: '8px', color: f.color,
-      });
-      this.add.text(cx - 20, legendY + 18, f.actions, {
-        fontFamily: _PX, fontSize: '7px', color: '#aaaacc',
-      });
-    });
-
     // ---- Controls panel ----
-    const panelY = 330;
+    const panelY = 270;
     const panelBg = this.add.graphics();
-    panelBg.fillStyle(0x080820, 0.88);
-    panelBg.fillRect(W / 2 - 210, panelY - 14, 420, 130);
-    panelBg.lineStyle(2, 0x334488);
-    panelBg.strokeRect(W / 2 - 210, panelY - 14, 420, 130);
-    panelBg.lineStyle(1, 0x556699);
-    panelBg.strokeRect(W / 2 - 207, panelY - 11, 414, 124);
+    panelBg.fillStyle(0x0d1a0e, 0.88);
+    panelBg.fillRoundedRect(W / 2 - 220, panelY, 440, 148, 6);
+    panelBg.lineStyle(1, 0x2a4a30);
+    panelBg.strokeRoundedRect(W / 2 - 220, panelY, 440, 148, 6);
 
-    this.add.text(W / 2, panelY, '— CONTROLS —', {
-      fontFamily: _PX, fontSize: '9px', color: '#6688cc',
+    this.add.text(W / 2, panelY + 14, '— HOW TO PLAY —', {
+      fontSize: '10px', color: '#44ffaa', fontFamily: 'monospace',
     }).setOrigin(0.5);
 
     const controls = [
-      ['A / D',      'Move left & right'],
-      ['SPACE',      'Toggle Edit / Play'],
-      ['Click slot', 'Cycle action'],
-      ['Right-click', 'Clear slot'],
+      ['A / D',        'Move the gorilla'],
+      ['Click a well', 'Cycle action in beat slot'],
+      ['SPACE',        'Toggle Edit / Play'],
+      ['Right-click',  'Clear a slot'],
     ];
-    controls.forEach((row, i) => {
-      const cy = panelY + 22 + i * 22;
-      this.add.text(W / 2 - 10, cy, row[0], {
-        fontFamily: _PX, fontSize: '8px', color: '#ffdd88',
+    controls.forEach(([key, desc], i) => {
+      const cy = panelY + 36 + i * 24;
+      this.add.text(W / 2 - 12, cy, key, {
+        fontSize: '10px', color: '#ffcc44', fontFamily: 'monospace',
       }).setOrigin(1, 0);
-      this.add.text(W / 2 + 4, cy, row[1], {
-        fontFamily: _PX, fontSize: '8px', color: '#aabbdd',
+      this.add.text(W / 2 + 4, cy, desc, {
+        fontSize: '10px', color: '#88aacc', fontFamily: 'monospace',
       });
     });
 
-    this.add.text(W / 2, panelY + 113, '8 beats · 120 BPM · timeline loops', {
-      fontFamily: _PX, fontSize: '7px', color: '#334466',
+    this.add.text(W / 2, panelY + 132, '4 beats · 120 BPM · rhythm drives everything', {
+      fontSize: '9px', color: '#2a4a30', fontFamily: 'monospace',
     }).setOrigin(0.5);
 
     // ---- Start prompt ----
-    const prompt = this.add.text(W / 2, 498, 'PRESS SPACE TO START', {
-      fontFamily: _PX, fontSize: '14px', color: '#ffffff',
-      stroke: '#000000', strokeThickness: 4,
+    const prompt = this.add.text(W / 2, 452, 'PRESS SPACE TO ENTER THE KINGDOM', {
+      fontSize: '13px', color: '#ffffff', fontFamily: 'monospace',
+      stroke: '#000000', strokeThickness: 3,
     }).setOrigin(0.5);
 
     this.tweens.add({
-      targets: prompt, alpha: { from: 1, to: 0 },
-      duration: 600, ease: 'Sine.easeInOut', yoyo: true, repeat: -1,
+      targets: prompt,
+      alpha: { from: 1, to: 0.2 },
+      duration: 700, ease: 'Sine.easeInOut', yoyo: true, repeat: -1,
     });
-
-    // ---- Version ----
-    this.add.text(W - 8, H - 6, 'v1.0', {
-      fontFamily: _PX, fontSize: '7px', color: '#334455',
-    }).setOrigin(1, 1);
 
     // ---- Input ----
     this.input.keyboard.once('keydown-SPACE', () => {
-      this.cameras.main.flash(180, 255, 220, 100);
+      // Resume AudioContext directly inside user gesture — must happen here
+      if (window.RK && window.RK._audio) window.RK._audio._ensureCtx();
+      this.cameras.main.flash(200, 20, 100, 40);
       this.time.delayedCall(200, () => {
         this.scene.start('GameScene', { level: 'level1' });
       });
     });
-  }
-
-  _spawnCloud(W, y, duration, delay) {
-    const g = this.add.graphics();
-    g.fillStyle(0xffffff, 0.92);
-    g.fillEllipse(0,    0,  90, 46);
-    g.fillEllipse(30,  -18, 58, 36);
-    g.fillEllipse(-28, -14, 52, 32);
-    g.fillStyle(0xddeeff, 0.35);
-    g.fillEllipse(0, 12, 84, 22);
-    g.y = y;
-
-    this.tweens.add({
-      targets:  g,
-      x:        { from: -160, to: W + 160 },
-      duration,
-      repeat:   -1,
-      delay,
-      ease:     'Linear',
-    });
-    this._clouds.push(g);
   }
 }

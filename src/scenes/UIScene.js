@@ -1,385 +1,292 @@
 // =============================================================================
 //  Rhythm Kingdom — UIScene.js
-//  Timeline overlay. Runs parallel to GameScene.
+//  Relic sequencer overlay. Listens to rk_beat from RhythmClock.
+//  Click beat wells to cycle actions. Space = toggle play/edit.
 // =============================================================================
-
-const _UI_PX = "'Press Start 2P', monospace";
 
 class UIScene extends Phaser.Scene {
   constructor() { super({ key: 'UIScene' }); }
 
   init(data) {
-    this.playerForm  = (data && data.startForm) || 'SMALL';
     this.timeline    = (data && data.timeline) || new RK.Timeline();
     this.currentBeat = 0;
     this.mode        = 'edit';
+    this._unlockedActions = ['JUMP', 'ROLL'];
   }
 
   create() {
     this.PANEL_TOP = RK.PLAY_HEIGHT;   // 480
-    this.SLOT_W    = 56;
-    this.SLOT_H    = 44;
-    this.SLOT_GAP  = 6;
+    this.WELL_W    = 80;
+    this.WELL_H    = 80;
+    this.WELL_GAP  = 10;
 
-    const totalW      = RK.BEAT_COUNT * this.SLOT_W + (RK.BEAT_COUNT - 1) * this.SLOT_GAP;
-    this.slotStartX   = (RK.WIDTH - totalW) / 2;
-    this.SLOT_CY      = this.PANEL_TOP + 52;
+    const totalW     = RK.BEAT_COUNT * this.WELL_W + (RK.BEAT_COUNT - 1) * this.WELL_GAP;
+    this.wellStartX  = (RK.WIDTH - totalW) / 2;
+    this.WELL_CY     = this.PANEL_TOP + 60;
 
     this._buildPanel();
-    this._buildSlots();
-    this._buildCardPalette();
-    this._buildCursor();
-    this._buildFormIndicator();
+    this._buildWells();
+    this._buildPlayhead();
     this._buildModeBadge();
-
-    this.beatTimer = this.time.addEvent({
-      delay: RK.BEAT_MS, callback: this._onBeat,
-      callbackScope: this, loop: true, paused: true,
-    });
+    this._buildUnlockIndicator();
 
     this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
-
     this.input.on('pointerdown', this._onPointerDown, this);
 
-    this.input.on('dragstart', (ptr, obj) => { obj.setDepth(20); obj.setScale(1.12); });
-    this.input.on('drag',      (ptr, obj, dx, dy) => { obj.setPosition(dx, dy); });
-    this.input.on('dragend',   (ptr, obj) => {
-      obj.setDepth(10);
-      obj.setScale(1);
-      const slotIdx = this._getSlotAtX(ptr.x, ptr.y);
-      if (slotIdx !== -1) {
-        this.timeline.setSlot(slotIdx, obj.actionType);
-        this._updateSlotVisuals();
-      }
-      obj.setPosition(obj.homeX, obj.homeY);
-    });
-
-    this.game.events.on('rk_form_change',  this._onFormChange,  this);
-    this.game.events.on('rk_player_dead',  this._onPlayerDead,  this);
-    this.game.events.on('rk_level_complete', this._onLevelComplete, this);
+    this.game.events.on('rk_beat',          this._onBeat,          this);
+    this.game.events.on('rk_player_dead',   this._onPlayerDead,    this);
+    this.game.events.on('rk_level_complete',this._onLevelComplete,  this);
+    this.game.events.on('rk_slot_success',  this._onSlotSuccess,   this);
+    this.game.events.on('rk_slot_invalid',  this._onSlotInvalid,   this);
+    this.game.events.on('rk_mode_change',   this._onModeChange,    this);
+    this.game.events.on('rk_action_unlock', this._onActionUnlock,  this);
   }
 
-  // ===========================================================================
-  //  Layout helpers
-  // ===========================================================================
-
-  _slotX(i) {
-    return this.slotStartX + i * (this.SLOT_W + this.SLOT_GAP) + this.SLOT_W / 2;
+  // ---------------------------------------------------------------------------
+  _wellX(i) {
+    return this.wellStartX + i * (this.WELL_W + this.WELL_GAP) + this.WELL_W / 2;
   }
 
-  _getSlotAtX(px, py) {
-    if (py < this.PANEL_TOP || py > RK.HEIGHT) return -1;
-    for (let i = 0; i < RK.BEAT_COUNT; i++) {
-      const cx = this._slotX(i);
-      if (px >= cx - this.SLOT_W / 2 && px <= cx + this.SLOT_W / 2 &&
-          py >= this.SLOT_CY - this.SLOT_H / 2 && py <= this.SLOT_CY + this.SLOT_H / 2) {
-        return i;
-      }
-    }
-    return -1;
-  }
-
-  // ===========================================================================
-  //  UI construction
-  // ===========================================================================
-
+  // ---------------------------------------------------------------------------
   _buildPanel() {
-    const W   = RK.WIDTH;
-    const PT  = this.PANEL_TOP;
-    const gfx = this.add.graphics();
-
-    // Panel body
-    gfx.fillStyle(0x080820); gfx.fillRect(0, PT, W, RK.UI_HEIGHT);
-
-    // Top border (bright) + inner glow
-    gfx.fillStyle(0x5577ff); gfx.fillRect(0, PT, W, 2);
-    gfx.fillStyle(0x2233aa, 0.5); gfx.fillRect(0, PT + 2, W, 3);
-
-    // Side accent bars
-    gfx.fillStyle(0x3344aa); gfx.fillRect(0, PT, 3, RK.UI_HEIGHT);
-    gfx.fillStyle(0x3344aa); gfx.fillRect(W - 3, PT, 3, RK.UI_HEIGHT);
-
-    // Divider below top controls row
-    gfx.fillStyle(0x1a1a3a); gfx.fillRect(3, PT + 32, W - 6, 1);
-
-    // Beat track background (slot row area)
-    gfx.fillStyle(0x0a0a1e); gfx.fillRect(3, PT + 34, W - 6, 72);
-    gfx.lineStyle(1, 0x1e1e44); gfx.strokeRect(3, PT + 34, W - 6, 72);
+    this.add.image(RK.WIDTH / 2, this.PANEL_TOP + RK.UI_HEIGHT / 2, 'ui_panel')
+      .setDepth(0);
   }
 
-  _buildSlots() {
-    this.slotBgs    = [];
-    this.slotLabels = [];
+  _buildWells() {
+    this.wellBgs    = [];
+    this.wellIcons  = [];
+    this.wellGlows  = [];
+    this.beatNums   = [];
 
     for (let i = 0; i < RK.BEAT_COUNT; i++) {
-      const cx = this._slotX(i);
-      const cy = this.SLOT_CY;
+      const cx = this._wellX(i);
+      const cy = this.WELL_CY;
 
-      // Beat number
-      this.add.text(cx, cy - this.SLOT_H / 2 - 9, String(i + 1), {
-        fontFamily: _UI_PX, fontSize: '7px', color: '#2a3a5a',
-      }).setOrigin(0.5, 1);
+      // Beat number label
+      const numStyle = { fontSize: '11px', color: '#cc9933', fontFamily: 'monospace', fontStyle: 'bold' };
+      const num = this.add.text(cx, cy - 44, String(i + 1), numStyle).setOrigin(0.5).setDepth(2);
+      this.beatNums.push(num);
 
-      // Slot background rect
-      const bg = this.add.rectangle(cx, cy, this.SLOT_W, this.SLOT_H, 0x0e0e28)
-        .setStrokeStyle(1, 0x2a2a5a)
-        .setInteractive({ useHandCursor: true });
-      this.slotBgs.push(bg);
+      // Stone well base
+      const bg = this.add.image(cx, cy, 'beat_well').setDepth(1);
+      this.wellBgs.push(bg);
 
-      // Action label
-      const lbl = this.add.text(cx, cy, '', {
-        fontFamily: _UI_PX, fontSize: '7px', fontStyle: 'bold',
-        color: '#ffffff', align: 'center',
-      }).setOrigin(0.5);
-      this.slotLabels.push(lbl);
+      // Glow overlay (initially invisible)
+      const glow = this.add.rectangle(cx, cy, this.WELL_W - 16, this.WELL_H - 16, 0x44ffaa, 0)
+        .setDepth(2);
+      this.wellGlows.push(glow);
+
+      // Action icon (initially hidden)
+      const icon = this.add.image(cx, cy, 'action_jump').setDepth(3).setAlpha(0).setScale(0.9);
+      this.wellIcons.push(icon);
+
+      // Click interaction
+      bg.setInteractive({ useHandCursor: true });
+      bg.on('pointerdown', () => this._onWellClick(i));
+      bg.on('pointerover', () => bg.setTint(0xffeecc));
+      bg.on('pointerout',  () => bg.clearTint());
     }
 
-    this._updateSlotVisuals();
+    this._updateWellVisuals();
   }
 
-  _buildCardPalette() {
-    this.paletteCards = [];
-    const actions  = ['JUMP', 'STOMP', 'FIRE'];
-    const texKeys  = { JUMP: 'card_jump', STOMP: 'card_stomp', FIRE: 'card_fire' };
-    const labels   = { JUMP: '↑ JUMP', STOMP: '↓ STOMP', FIRE: '★ FIRE' };
-    const labelCol = { JUMP: '#88ff88', STOMP: '#ffdd44', FIRE: '#ff8866' };
-    const paletteY = this.PANEL_TOP + 100;
-
-    // Palette area label
-    this.add.text(this.slotStartX + 8 * (this.SLOT_W + this.SLOT_GAP) + 16, paletteY - 12,
-      'DRAG →', { fontFamily: _UI_PX, fontSize: '7px', color: '#334466' });
-
-    actions.forEach((action, i) => {
-      const px = 80 + i * 66;
-      const card = this.add.image(px, paletteY, texKeys[action])
-        .setDisplaySize(52, 38)
-        .setInteractive({ draggable: true, useHandCursor: true })
-        .setDepth(10);
-      card.actionType = action;
-      card.homeX = px;
-      card.homeY = paletteY;
-      this.input.setDraggable(card);
-
-      this.add.text(px, paletteY, labels[action], {
-        fontFamily: _UI_PX, fontSize: '7px', fontStyle: 'bold',
-        color: labelCol[action],
-      }).setOrigin(0.5).setDepth(11);
-
-      this.paletteCards.push(card);
-    });
-
-    this._updatePaletteVisibility();
-  }
-
-  _updatePaletteVisibility() {
-    const allowed = RK.ALLOWED[this.playerForm] || [];
-    this.paletteCards.forEach(card => {
-      const legal = allowed.includes(card.actionType);
-      card.setAlpha(legal ? 1 : 0.2);
-      if (!legal) card.disableInteractive();
-      else card.setInteractive({ draggable: true, useHandCursor: true });
-    });
-  }
-
-  _buildCursor() {
-    this.beatCursor = this.add.rectangle(
-      this._slotX(0), this.SLOT_CY,
-      this.SLOT_W + 6, this.SLOT_H + 6,
-      0xffffff, 0.06
-    ).setStrokeStyle(2, 0xffffff, 0.7);
-  }
-
-  _buildFormIndicator() {
-    const py  = this.PANEL_TOP + 16;
-    const col = RK.FORM_TINTS[this.playerForm] || 0x4488ff;
-
-    this.formDot = this.add.circle(14, py, 7, col)
-      .setStrokeStyle(1, 0x000000);
-
-    this.formNameTxt = this.add.text(26, py - 8, this.playerForm, {
-      fontFamily: _UI_PX, fontSize: '9px', fontStyle: 'bold',
-      color: '#' + col.toString(16).padStart(6, '0'),
-    });
-
-    this.formAllowedTxt = this.add.text(26, py + 5, (RK.ALLOWED[this.playerForm] || []).join(' + '), {
-      fontFamily: _UI_PX, fontSize: '7px', color: '#556688',
-    });
+  _buildPlayhead() {
+    this._playhead = this.add.image(this._wellX(0), this.WELL_CY, 'playhead')
+      .setDepth(4).setAlpha(0.9);
   }
 
   _buildModeBadge() {
-    const bx  = RK.WIDTH - 80;
-    const py  = this.PANEL_TOP + 16;
-
-    this.modeBg  = this.add.rectangle(bx, py, 136, 26, 0xffcc00)
-      .setStrokeStyle(2, 0xaa8800);
-    this.modeTxt = this.add.text(bx, py, 'EDIT', {
-      fontFamily: _UI_PX, fontSize: '10px', fontStyle: 'bold', color: '#000000',
-    }).setOrigin(0.5);
-
-    this.add.text(bx, py + 18, 'SPACE = toggle', {
-      fontFamily: _UI_PX, fontSize: '6px', color: '#334455',
-    }).setOrigin(0.5);
+    const bx = RK.WIDTH - 70;
+    const by = this.PANEL_TOP + 20;
+    this._modeBg = this.add.rectangle(bx, by, 110, 24, 0xffcc00)
+      .setDepth(5).setStrokeStyle(2, 0xaa8800);
+    this._modeTxt = this.add.text(bx, by, 'EDIT', {
+      fontSize: '11px', fontStyle: 'bold', color: '#000000', fontFamily: 'monospace',
+    }).setOrigin(0.5).setDepth(6);
+    this.add.text(bx, by + 17, 'SPACE', {
+      fontSize: '9px', color: '#887744', fontFamily: 'monospace',
+    }).setOrigin(0.5).setDepth(6);
   }
 
-  // ===========================================================================
-  //  Slot visuals
-  // ===========================================================================
+  _buildUnlockIndicator() {
+    this._unlockTxt = this.add.text(12, this.PANEL_TOP + 12, '', {
+      fontSize: '9px', color: '#44ffaa', fontFamily: 'monospace',
+    }).setDepth(5);
+    this._refreshUnlockDisplay();
+  }
 
-  _updateSlotVisuals() {
-    const allowed = RK.ALLOWED[this.playerForm] || [];
+  _refreshUnlockDisplay() {
+    const symbols = { JUMP: '↑ JUMP', ROLL: '⟳ ROLL', COCONUT: '○ COCO', PUNCH: '★ PUNCH' };
+    const txt = this._unlockedActions.map(a => symbols[a] || a).join('  ');
+    this._unlockTxt.setText(txt);
+  }
 
+  // ---------------------------------------------------------------------------
+  _updateWellVisuals() {
     for (let i = 0; i < RK.BEAT_COUNT; i++) {
-      const action  = this.timeline.getSlot(i);
-      const isNext  = (i === this.currentBeat);
-      const isLegal = !action || allowed.includes(action);
-      const bg      = this.slotBgs[i];
-      const lbl     = this.slotLabels[i];
+      const action = this.timeline.getSlot(i);
+      const icon   = this.wellIcons[i];
+      const glow   = this.wellGlows[i];
 
-      if (!action) {
-        bg.setFillStyle(0x0e0e28);
-        bg.setStrokeStyle(isNext ? 2 : 1, isNext ? 0x6688dd : 0x2a2a5a);
-        lbl.setText('');
+      if (action) {
+        const iconKey = 'action_' + action.toLowerCase();
+        icon.setTexture(iconKey).setAlpha(1);
+        const col = RK.ACTION_COLORS[action] || 0x888888;
+        glow.setFillStyle(col, 0.18);
       } else {
-        const cc = RK.CARD_COLORS[action] || 0x888888;
-        if (isLegal) {
-          bg.setFillStyle(cc, 0.5);
-          bg.setStrokeStyle(isNext ? 2 : 1, isNext ? 0xffffff : cc);
-          lbl.setText(action).setStyle({ color: '#ffffff' });
-        } else {
-          bg.setFillStyle(0x2a1a1a, 0.9);
-          bg.setStrokeStyle(1, 0x664444);
-          lbl.setText(action + '\n✗').setStyle({ color: '#ff4444' });
+        icon.setAlpha(0);
+        glow.setFillStyle(0x44ffaa, 0);
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  _onWellClick(index) {
+    this.timeline.cycleSlot(index);
+    this._updateWellVisuals();
+    // Feedback pulse
+    const glow = this.wellGlows[index];
+    this.tweens.add({
+      targets: glow, fillAlpha: 0.5, duration: 80, yoyo: true,
+    });
+  }
+
+  _onPointerDown(pointer) {
+    if (pointer.y < this.PANEL_TOP) return;
+    if (pointer.rightButtonDown()) {
+      for (let i = 0; i < RK.BEAT_COUNT; i++) {
+        const cx = this._wellX(i);
+        if (Math.abs(pointer.x - cx) < this.WELL_W / 2 &&
+            Math.abs(pointer.y - this.WELL_CY) < this.WELL_H / 2) {
+          this.timeline.clearSlot(i);
+          this._updateWellVisuals();
+          return;
         }
       }
     }
   }
 
-  // ===========================================================================
-  //  Pointer input
-  // ===========================================================================
-
-  _onPointerDown(pointer) {
-    if (pointer.y < this.PANEL_TOP) return;
-    const idx = this._getSlotAtX(pointer.x, pointer.y);
-    if (idx === -1) return;
-
-    if (pointer.rightButtonDown()) {
-      this.timeline.clearSlot(idx);
-    } else {
-      const allowed = RK.ALLOWED[this.playerForm] || [];
-      this.timeline.cycleSlot(idx, allowed);
-    }
-    this._updateSlotVisuals();
+  // ---------------------------------------------------------------------------
+  _onBeat(beatIndex) {
+    this.currentBeat = beatIndex;
+    this._movePlayhead(beatIndex);
+    this._pulseWell(beatIndex);
+    this._beatScreenPulse(beatIndex === 0);
+    this._updateBeatNumbers(beatIndex);
   }
 
-  // ===========================================================================
-  //  Beat tick
-  // ===========================================================================
-
-  _onBeat() {
-    const beat = this.currentBeat;
-    this.game.events.emit('rk_beat', beat);
-    this.currentBeat = (this.currentBeat + 1) % RK.BEAT_COUNT;
-    this._moveCursor(this.currentBeat);
-    this._updateSlotVisuals();
-    this._flashSlot(beat);
-  }
-
-  _flashSlot(index) {
-    if (index < 0 || index >= RK.BEAT_COUNT) return;
-    const bg      = this.slotBgs[index];
-    const action  = this.timeline.getSlot(index);
-    const allowed = RK.ALLOWED[this.playerForm] || [];
-    const legal   = !action || allowed.includes(action);
-    const color   = (legal && action) ? 0xffffff : (action ? 0xff2222 : 0x334477);
-
-    bg.setFillStyle(color, 0.75);
-    this.time.delayedCall(130, () => {
-      if (bg && bg.scene) this._updateSlotVisuals();
-    });
-  }
-
-  _moveCursor(index) {
-    this.tweens.killTweensOf(this.beatCursor);
+  _movePlayhead(beatIndex) {
+    const tx = this._wellX(beatIndex);
+    this.tweens.killTweensOf(this._playhead);
     this.tweens.add({
-      targets: this.beatCursor, x: this._slotX(index),
-      duration: 75, ease: 'Quad.easeOut',
+      targets: this._playhead, x: tx,
+      duration: 60, ease: 'Quad.easeOut',
     });
   }
 
-  // ===========================================================================
-  //  Form change
-  // ===========================================================================
-
-  _onFormChange(data) {
-    this.playerForm = data.form;
-    this.timeline.setForm(data.form);
-    this._updateFormIndicator();
-    this._updateSlotVisuals();
-    this._updatePaletteVisibility();
+  _pulseWell(i) {
+    const bg = this.wellBgs[i];
+    this.tweens.add({
+      targets: bg, scaleX: 1.08, scaleY: 1.08,
+      duration: 80, yoyo: true, ease: 'Sine.easeOut',
+    });
   }
 
-  _updateFormIndicator() {
-    const col = RK.FORM_TINTS[this.playerForm] || 0x4488ff;
-    const hex = '#' + col.toString(16).padStart(6, '0');
-    this.formDot.setFillStyle(col);
-    this.formNameTxt.setText(this.playerForm).setStyle({ color: hex });
-    this.formAllowedTxt.setText((RK.ALLOWED[this.playerForm] || []).join(' + '));
+  _beatScreenPulse(strong) {
+    const alpha = strong ? 0.12 : 0.04;
+    const col   = strong ? 0xffcc44 : 0x44ffaa;
+    const rect  = this.add.rectangle(
+      RK.WIDTH / 2, this.PANEL_TOP + RK.UI_HEIGHT / 2,
+      RK.WIDTH, RK.UI_HEIGHT, col, alpha
+    ).setDepth(10);
+    this.tweens.add({
+      targets: rect, alpha: 0, duration: 120, ease: 'Sine.easeOut',
+      onComplete: () => rect.destroy(),
+    });
   }
 
-  // ===========================================================================
-  //  Player dead / level complete
-  // ===========================================================================
+  _updateBeatNumbers(activeBeat) {
+    this.beatNums.forEach((num, i) => {
+      num.setStyle({ color: i === activeBeat ? '#ffcc44' : '#cc9933' });
+      num.setScale(i === activeBeat ? 1.3 : 1);
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  _onSlotSuccess(beatIndex) {
+    const glow = this.wellGlows[beatIndex];
+    if (!glow) return;
+    const col = RK.ACTION_COLORS[this.timeline.getSlot(beatIndex)] || 0x44ffaa;
+    glow.setFillStyle(col, 0.7);
+    this.tweens.add({
+      targets: glow, fillAlpha: 0,
+      duration: 200, ease: 'Sine.easeOut',
+    });
+  }
+
+  _onSlotInvalid(beatIndex) {
+    const bg = this.wellBgs[beatIndex];
+    if (!bg) return;
+    bg.setTint(0xff4444);
+    this.time.delayedCall(200, () => { if (bg.scene) bg.clearTint(); });
+  }
+
+  // ---------------------------------------------------------------------------
+  _onModeChange(data) {
+    this.mode = data.mode;
+    this._updateModeBadge();
+  }
+
+  _onActionUnlock(data) {
+    if (data && data.action && !this._unlockedActions.includes(data.action)) {
+      this._unlockedActions.push(data.action);
+      this.timeline.unlock(data.action);
+      this._refreshUnlockDisplay();
+    }
+  }
 
   _onPlayerDead() {
-    if (this.beatTimer) this.beatTimer.paused = true;
     this.mode = 'edit';
     this._updateModeBadge();
+    // Reset playhead to beat 0
+    this._movePlayhead(0);
+    this.currentBeat = 0;
   }
 
   _onLevelComplete() {
-    if (this.beatTimer) this.beatTimer.paused = true;
     this.mode = 'edit';
     this._updateModeBadge();
-  }
-
-  // ===========================================================================
-  //  Mode toggle
-  // ===========================================================================
-
-  _toggleMode() {
-    this.mode = this.mode === 'edit' ? 'play' : 'edit';
-    this.beatTimer.paused = (this.mode !== 'play');
-    this._updateModeBadge();
-    this.game.events.emit('rk_mode_change', { mode: this.mode });
   }
 
   _updateModeBadge() {
     if (this.mode === 'play') {
-      this.modeBg.setFillStyle(0x33bb44).setStrokeStyle(2, 0x228833);
-      this.modeTxt.setText('▶ PLAY').setStyle({ color: '#ffffff' });
+      this._modeBg.setFillStyle(0x33bb44).setStrokeStyle(2, 0x228833);
+      this._modeTxt.setText('▶ PLAY').setStyle({ color: '#ffffff' });
     } else {
-      this.modeBg.setFillStyle(0xffcc00).setStrokeStyle(2, 0xaa8800);
-      this.modeTxt.setText('EDIT').setStyle({ color: '#000000' });
+      this._modeBg.setFillStyle(0xffcc00).setStrokeStyle(2, 0xaa8800);
+      this._modeTxt.setText('✏ EDIT').setStyle({ color: '#000000' });
     }
   }
 
-  // ===========================================================================
-  //  Update
-  // ===========================================================================
+  // ---------------------------------------------------------------------------
+  _toggleMode() {
+    this.mode = this.mode === 'edit' ? 'play' : 'edit';
+    this._updateModeBadge();
+    this.game.events.emit('rk_mode_change', { mode: this.mode });
+  }
 
   update() {
     if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) this._toggleMode();
   }
 
-  // ===========================================================================
-  //  Cleanup
-  // ===========================================================================
-
   shutdown() {
-    if (this.beatTimer) { this.beatTimer.remove(false); this.beatTimer = null; }
-    this.game.events.off('rk_form_change',   this._onFormChange,   this);
-    this.game.events.off('rk_player_dead',   this._onPlayerDead,   this);
-    this.game.events.off('rk_level_complete', this._onLevelComplete, this);
+    this.game.events.off('rk_beat',          this._onBeat,          this);
+    this.game.events.off('rk_player_dead',   this._onPlayerDead,    this);
+    this.game.events.off('rk_level_complete',this._onLevelComplete,  this);
+    this.game.events.off('rk_slot_success',  this._onSlotSuccess,   this);
+    this.game.events.off('rk_slot_invalid',  this._onSlotInvalid,   this);
+    this.game.events.off('rk_mode_change',   this._onModeChange,    this);
+    this.game.events.off('rk_action_unlock', this._onActionUnlock,  this);
   }
 }
