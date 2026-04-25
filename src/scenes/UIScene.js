@@ -508,7 +508,36 @@ class UIScene extends Phaser.Scene {
       this._unlockedActions.push(data.action);
       this.timeline.unlock(data.action);
       this._refreshLockedDisplay();
+      this._updateWellVisuals();
+      this._showUnlockBanner(data.action);
     }
+  }
+
+  _showUnlockBanner(action) {
+    const messages = {
+      COCONUT: 'COCONUT RUNE UNLOCKED!\nThrow coconuts at enemies to kill them.',
+      JUMP:    'JUMP RUNE UNLOCKED!\nPlace JUMP in the timeline to leap.',
+      STOMP:   'STOMP RUNE UNLOCKED!\nStomp enemies from above.',
+      FIRE:    'FIRE RUNE UNLOCKED!\nShoot fireballs at enemies.',
+    };
+    const msg = messages[action] || (action + ' RUNE UNLOCKED!');
+    const cx = RK.WIDTH / 2;
+    const cy = RK.HEIGHT / 2;
+
+    const bg = this.add.rectangle(cx, cy, 480, 80, 0x000000, 0.82)
+      .setDepth(20).setScrollFactor(0).setStrokeStyle(2, 0xddaa22);
+    const txt = this.add.text(cx, cy, msg, {
+      fontSize: '14px', fill: '#ffdd88', align: 'center',
+      fontFamily: '"Press Start 2P", monospace',
+      wordWrap: { width: 440 },
+    }).setOrigin(0.5).setDepth(21).setScrollFactor(0);
+
+    this.time.delayedCall(2800, () => {
+      this.tweens.add({
+        targets: [bg, txt], alpha: 0, duration: 400,
+        onComplete: () => { bg.destroy(); txt.destroy(); },
+      });
+    });
   }
 
   _onPlayerDead() {

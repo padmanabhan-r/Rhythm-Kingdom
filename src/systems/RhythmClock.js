@@ -58,16 +58,18 @@ window.RK.RhythmClock = class RhythmClock {
     const ctx = this._audio._ensureCtx();
     if (!ctx) return;
     const BEAT_S = RK.BEAT_MS / 1000;
+    const now = ctx.currentTime;
+    // Catch up silently if scheduler fell behind — never pile-fire missed beats
+    while (this._nextBeatTime < now - BEAT_S) {
+      this._nextBeatTime += BEAT_S;
+      this._beatIndex = (this._beatIndex + 1) % this._beatCount;
+    }
     // Schedule beats up to 100ms ahead
-    while (this._nextBeatTime < ctx.currentTime + 0.1) {
+    while (this._nextBeatTime < now + 0.1) {
       const beatIdx = this._beatIndex;
-      const fireAt = this._nextBeatTime;
-      // Calculate delay for Phaser side
-      const delay = Math.max(0, (fireAt - ctx.currentTime) * 1000);
+      const delay = Math.max(0, (this._nextBeatTime - now) * 1000);
       setTimeout(() => {
-        if (this._running) {
-          this._events.emit('rk_beat', beatIdx);
-        }
+        if (this._running) this._events.emit('rk_beat', beatIdx);
       }, delay);
       this._nextBeatTime += BEAT_S;
       this._beatIndex = (this._beatIndex + 1) % this._beatCount;

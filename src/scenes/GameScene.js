@@ -453,9 +453,12 @@ _onPlayerLand(data) { this._gameFeel.dustBurst(data.x, data.y + 14); }
     if (unlocks) {
       this.player.unlock(unlocks);
       this.timeline.unlock(unlocks);
-      this.game.events.emit('rk_action_unlock', { action: unlocks });
       this._audio.play('unlock_action', 0.8);
       this._gameFeel.impactSpark(pickup.x, pickup.y);
+      // Defer emit so it doesn't collide with mid-beat execution
+      this.time.delayedCall(50, () => {
+        this.game.events.emit('rk_action_unlock', { action: unlocks });
+      });
     }
 
     this.time.delayedCall(16, () => { if (pickup) pickup.destroy(); });

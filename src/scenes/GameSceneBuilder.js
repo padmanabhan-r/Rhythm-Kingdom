@@ -129,16 +129,23 @@ window.RK.GameSceneBuilder = {
 
   buildPickups(scene, ld) {
     (ld.pickups || []).forEach(p => {
-      const sprite = scene.physics.add.sprite(p.x, p.y, 'relic_shard');
+      const iconKey = 'action_' + (p.unlocks || 'coconut').toLowerCase();
+      const tex = scene.textures.exists(iconKey) ? iconKey : 'relic_shard';
+      const sprite = scene.physics.add.sprite(p.x, p.y, tex);
+      sprite.setScale(0.7);
       sprite.body.setAllowGravity(false);
       sprite.body.setImmovable(true);
       sprite.setDepth(3);
       sprite.setData('unlocks', p.unlocks);
-      const tints = { COCONUT: 0xddaa22 };
-      if (tints[p.unlocks]) sprite.setTint(tints[p.unlocks]);
       scene.tweens.add({
-        targets: sprite, y: p.y - 8, angle: 360,
-        duration: 1200, ease: 'Sine.easeInOut', yoyo: true, repeat: -1,
+        targets: sprite, y: p.y - 10,
+        duration: 1000, ease: 'Sine.easeInOut', yoyo: true, repeat: -1,
+      });
+      // Gentle glow pulse instead of spinning
+      scene.tweens.add({
+        targets: sprite, alpha: { from: 1, to: 0.6 },
+        duration: 800, ease: 'Sine.easeInOut', yoyo: true, repeat: -1,
+        delay: 200,
       });
       scene.pickupGroup.add(sprite);
     });
