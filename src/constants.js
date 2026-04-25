@@ -4,10 +4,10 @@
 // =============================================================================
 
 window.RK = {
-  WIDTH:       800,
-  HEIGHT:      600,
-  PLAY_HEIGHT: 480,
-  UI_HEIGHT:   120,
+  WIDTH:       960,
+  HEIGHT:      540,
+  PLAY_HEIGHT: 500,
+  UI_HEIGHT:   60,
 
   BPM: 120,
   BEAT_MS: 500,

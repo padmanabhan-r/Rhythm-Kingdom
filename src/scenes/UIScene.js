@@ -15,20 +15,21 @@ class UIScene extends Phaser.Scene {
   }
 
   create() {
-    this.PANEL_TOP = RK.PLAY_HEIGHT;   // 480
-    this.WELL_W    = 80;
-    this.WELL_H    = 80;
-    this.WELL_GAP  = 10;
+    this.PANEL_TOP = 0;   // UI bar at TOP
+    this.WELL_W    = 72;
+    this.WELL_H    = 56;
+    this.WELL_GAP  = 8;
 
     const totalW     = RK.BEAT_COUNT * this.WELL_W + (RK.BEAT_COUNT - 1) * this.WELL_GAP;
     this.wellStartX  = (RK.WIDTH - totalW) / 2;
-    this.WELL_CY     = this.PANEL_TOP + 60;
+    this.WELL_CY     = 50;
 
     this._buildPanel();
     this._buildWells();
     this._buildPlayhead();
     this._buildModeBadge();
     this._buildUnlockIndicator();
+    this._buildMusicSelector();
 
     this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     this.input.on('pointerdown', this._onPointerDown, this);
@@ -49,8 +50,11 @@ class UIScene extends Phaser.Scene {
 
   // ---------------------------------------------------------------------------
   _buildPanel() {
-    this.add.image(RK.WIDTH / 2, this.PANEL_TOP + RK.UI_HEIGHT / 2, 'ui_panel')
-      .setDepth(0);
+    // Thin top bar
+    this.add.rectangle(RK.WIDTH / 2, RK.UI_HEIGHT / 2, RK.WIDTH, RK.UI_HEIGHT, 0x1a140e, 0.95)
+      .setDepth(0).setScrollFactor(0);
+    this.add.rectangle(RK.WIDTH / 2, 0, RK.WIDTH, 2, 0xcc9933)
+      .setDepth(0).setScrollFactor(0);
   }
 
   _buildWells() {
@@ -116,6 +120,73 @@ class UIScene extends Phaser.Scene {
     this._refreshUnlockDisplay();
   }
 
+  _buildMusicSelector() {
+    const tracks = [
+      { key: 'backing_loop_chill',   label: 'CHILL',  color: 0x44ffaa },
+      { key: 'backing_loop',         label: 'GROOVE', color: 0xffcc44 },
+      { key: 'backing_loop_intense', label: 'INTENSE', color: 0xff4422 },
+    ];
+    this._tracks = tracks;
+    this._trackIndex = 1;
+
+    // Gear button — left side of panel, below mode badge
+    const bx = 22;
+    const by = this.PANEL_TOP + 22;
+    this._gearBtn = this.add.rectangle(bx, by, 18, 18, 0x2a2015)
+      .setDepth(5).setStrokeStyle(1, 0xcc9933).setScrollFactor(0).setInteractive({ useHandCursor: true });
+    this._gearBtn.on('pointerdown', (p) => p.event.stopPropagation());
+    this._gearBtn.on('pointerup', () => this._toggleTrackPicker());
+
+    // Gear icon — 6 dots around a center
+    const gl = this.add.graphics().setDepth(6).setScrollFactor(0);
+    gl.fillStyle(0xcc9933);
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2 - Math.PI / 2;
+      const r = 6;
+      gl.fillCircle(bx + Math.cos(a) * r, by + Math.sin(a) * r, 1.8);
+    }
+    gl.fillCircle(bx, by, 2.5);
+
+    // Track picker — inside UI panel, below wells
+    const PY = this.PANEL_TOP;
+    this._pickerBg = this.add.rectangle(RK.WIDTH / 2, PY + 48, 300, 55, 0x1a140e, 0.95)
+      .setDepth(20).setAlpha(0).setStrokeStyle(2, 0xcc9933).setScrollFactor(0);
+
+    this._pickerBtns = tracks.map((t, i) => {
+      const px = 80 + i * 110;
+      const py = PY + 48;
+      const btn = this.add.rectangle(px, py, 100, 30, t.color, 0.15)
+        .setDepth(21).setAlpha(0).setScrollFactor(0).setInteractive({ useHandCursor: true })
+        .setStrokeStyle(1, t.color);
+      btn.on('pointerdown', (p) => p.event.stopPropagation());
+      btn.on('pointerup', () => this._selectTrack(i));
+      const lbl = this.add.text(px, py, t.label, {
+        fontSize: '10px', color: '#' + t.color.toString(16).padStart(6, '0'),
+        fontFamily: 'monospace', fontStyle: 'bold',
+      }).setOrigin(0.5).setDepth(22).setScrollFactor(0).setAlpha(0);
+      return { btn, lbl, track: t };
+    });
+
+    this._pickerOpen = false;
+  }
+
+  _toggleTrackPicker() {
+    this._pickerOpen = !this._pickerOpen;
+    const target = this._pickerOpen ? 1 : 0;
+    this._pickerBg.setAlpha(target);
+    this._pickerBtns.forEach(({ btn, lbl }) => {
+      btn.setAlpha(target);
+      lbl.setAlpha(target);
+    });
+  }
+
+  _selectTrack(index) {
+    this._trackIndex = index;
+    const track = this._tracks[index];
+    this.game.events.emit('rk_loop_change', { loopKey: track.key });
+    this._toggleTrackPicker();
+  }
+
   _refreshUnlockDisplay() {
     const symbols = { JUMP: '↑ JUMP', ROLL: '⟳ ROLL', COCONUT: '○ COCO', PUNCH: '★ PUNCH' };
     const txt = this._unlockedActions.map(a => symbols[a] || a).join('  ');
@@ -154,6 +225,17 @@ class UIScene extends Phaser.Scene {
 
   _onPointerDown(pointer) {
     if (pointer.y < this.PANEL_TOP) return;
+    if (this._pickerOpen) {
+      let inside = false;
+      const px = pointer.x, py = pointer.y;
+      this._pickerBtns.forEach(({ btn }) => {
+        const bx = btn.x - 50, ex = btn.x + 50;
+        const by = btn.y - 15, ey = btn.y + 15;
+        if (px >= bx && px <= ex && py >= by && py <= ey) inside = true;
+      });
+      if (!inside) this._toggleTrackPicker();
+      return;
+    }
     if (pointer.rightButtonDown()) {
       for (let i = 0; i < RK.BEAT_COUNT; i++) {
         const cx = this._wellX(i);

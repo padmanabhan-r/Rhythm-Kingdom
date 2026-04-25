@@ -7,6 +7,7 @@ window.RK.GameFeel = class GameFeel {
   constructor(scene) {
     this._scene = scene;
     this._particles = scene.add.group();
+    this._beatAlt = false;
   }
 
   hitstop(ms) {
@@ -51,16 +52,17 @@ window.RK.GameFeel = class GameFeel {
 
   beatPulse(strong) {
     const cam = this._scene.cameras.main;
-    const alpha = strong ? 0.12 : 0.04;
-    cam.flash(80, 255, 255, 220, false, (cam, progress) => {});
-    // Override flash with custom alpha overlay using a rectangle
-    const rect = this._scene.add.rectangle(
-      RK.WIDTH / 2, RK.HEIGHT / 2, RK.WIDTH, RK.HEIGHT, 0xffffff, alpha
-    ).setScrollFactor(0).setDepth(100);
+    const angle = (strong ? 1.2 : 0.6) * (this._beatAlt ? 1 : -1);
+    this._beatAlt = !this._beatAlt;
+    cam.rotation = angle * (Math.PI / 180);
     this._scene.tweens.add({
-      targets: rect, alpha: 0, duration: 120, ease: 'Sine.easeOut',
-      onComplete: () => rect.destroy(),
+      targets: { rot: cam.rotation },
+      rot: 0,
+      duration: 220,
+      ease: 'Sine.easeOut',
+      onUpdate: (tween, obj) => { cam.rotation = obj.rot; },
     });
+    cam.flash(40, 200, 200, 200, 0.08, false);
   }
 
   dustBurst(x, y) {

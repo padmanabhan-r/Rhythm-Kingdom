@@ -24,10 +24,11 @@ window.RK.AudioManager = class AudioManager {
   async loadSounds() {
     this._ensureCtx();
     const keys = [
-      'backing_loop',
+      'backing_loop_chill', 'backing_loop', 'backing_loop_intense',
       'jump', 'roll', 'coconut_throw', 'coconut_impact', 'punch',
       'unlock_action', 'checkpoint',
       'invalid_beat', 'hit', 'death', 'level_complete',
+      'chatter', 'hoot', 'monkey', 'bird', 'thunder',
     ];
     const loads = keys.map(async (key) => {
       try {
@@ -43,7 +44,7 @@ window.RK.AudioManager = class AudioManager {
   }
 
   _playBuf(key, vol) {
-    vol = vol !== undefined ? vol : 0.7;
+    vol = vol !== undefined ? vol : 1.0;
     const ctx = this._ensureCtx();
     if (!ctx || !this.buffers[key]) return false;
     const gain = ctx.createGain();

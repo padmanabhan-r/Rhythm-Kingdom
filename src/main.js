@@ -36,8 +36,6 @@
     scale: {
       mode: Phaser.Scale.FIT,
       autoCenter: Phaser.Scale.CENTER_BOTH,
-      width: RK.WIDTH,
-      height: RK.HEIGHT,
     },
 
     audio: { disableWebAudio: false },

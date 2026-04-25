@@ -4,9 +4,10 @@
 // =============================================================================
 
 window.RK.RhythmClock = class RhythmClock {
-  constructor(audioManager, gameEvents) {
+  constructor(audioManager, gameEvents, loopKey) {
     this._audio = audioManager;
     this._events = gameEvents;
+    this._loopKey = loopKey || 'backing_loop';
     this._intervalId = null;
     this._nextBeatTime = 0;
     this._beatIndex = 0;
@@ -18,10 +19,9 @@ window.RK.RhythmClock = class RhythmClock {
     this._running = true;
     const ctx = this._audio._ensureCtx();
     if (!ctx) return;
-    this._audio.playLoop('backing_loop');
+    this._audio.playLoop(this._loopKey);
     this._nextBeatTime = ctx.currentTime + 0.05;
     this._beatIndex = 0;
-    // 25ms lookahead interval, 100ms scheduling window
     this._intervalId = setInterval(() => this._schedule(), 25);
   }
 
@@ -31,7 +31,14 @@ window.RK.RhythmClock = class RhythmClock {
       clearInterval(this._intervalId);
       this._intervalId = null;
     }
-    this._audio.stopLoop('backing_loop');
+    this._audio.stopLoop(this._loopKey);
+  }
+
+  setLoopKey(key) {
+    const wasRunning = this._running;
+    if (wasRunning) this.stop();
+    this._loopKey = key;
+    if (wasRunning) this.start();
   }
 
   reset() {

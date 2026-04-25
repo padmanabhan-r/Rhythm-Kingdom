@@ -55,7 +55,8 @@ class GameScene extends Phaser.Scene {
     this._buildHUD(ld);
     this._bindEvents();
 
-    this._rhythmClock = new RK.RhythmClock(this._audio, this.game.events);
+    const loopKey = (ld.loopKey || 'backing_loop');
+    this._rhythmClock = new RK.RhythmClock(this._audio, this.game.events, loopKey);
     // Start immediately — user already gave a gesture (Space on menu)
     this._audio._ensureCtx();
     this._rhythmClock.start();
@@ -272,6 +273,7 @@ class GameScene extends Phaser.Scene {
     this.game.events.on('rk_player_roll',   this._onPlayerRoll,    this);
     this.game.events.on('rk_player_hit',    this._onPlayerHit,     this);
     this.game.events.on('rk_player_dead',   this._onPlayerDead,    this);
+    this.game.events.on('rk_loop_change',   this._onLoopChange,    this);
   }
 
   // ---------------------------------------------------------------------------
@@ -307,6 +309,14 @@ class GameScene extends Phaser.Scene {
   _onBeat(beatIndex) {
     if (!this.player || this.player.dead) return;
 
+    this._gameFeel.beatPulse(beatIndex === 0);
+
+    // Random ambient jungle sounds
+    if (Math.random() < 0.08) {
+      const ambient = ['chatter', 'hoot', 'monkey', 'bird', 'thunder'][Math.floor(Math.random() * 5)];
+      this._audio.play(ambient, 0.35);
+    }
+
     const action = this.timeline.getSlot(beatIndex);
     if (!action) return;
 
@@ -320,7 +330,7 @@ class GameScene extends Phaser.Scene {
 
     // SFX plays in both edit + play mode — composition feel
     const SFX = { JUMP: 'jump', ROLL: 'roll', COCONUT: 'coconut_throw', PUNCH: 'punch' };
-    this._audio.play(SFX[action], 0.6);
+    this._audio.play(SFX[action], 1.0);
     this.game.events.emit('rk_slot_success', beatIndex);
 
     // Gameplay actions only execute in play mode
@@ -336,6 +346,10 @@ class GameScene extends Phaser.Scene {
 
   _onModeChange(data) {
     this.mode = data.mode;
+  }
+
+  _onLoopChange(data) {
+    if (this._rhythmClock) this._rhythmClock.setLoopKey(data.loopKey);
   }
 
   // ---------------------------------------------------------------------------

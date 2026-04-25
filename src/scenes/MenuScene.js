@@ -112,12 +112,12 @@ class MenuScene extends Phaser.Scene {
     });
 
     // ---- Controls panel ----
-    const panelY = 270;
+    const panelY = 240;
     const panelBg = this.add.graphics();
     panelBg.fillStyle(0x0d1a0e, 0.88);
-    panelBg.fillRoundedRect(W / 2 - 220, panelY, 440, 148, 6);
+    panelBg.fillRoundedRect(W / 2 - 220, panelY, 440, 130, 6);
     panelBg.lineStyle(1, 0x2a4a30);
-    panelBg.strokeRoundedRect(W / 2 - 220, panelY, 440, 148, 6);
+    panelBg.strokeRoundedRect(W / 2 - 220, panelY, 440, 130, 6);
 
     this.add.text(W / 2, panelY + 14, '— HOW TO PLAY —', {
       fontSize: '10px', color: '#44ffaa', fontFamily: 'monospace',
@@ -130,7 +130,7 @@ class MenuScene extends Phaser.Scene {
       ['Right-click',  'Clear a slot'],
     ];
     controls.forEach(([key, desc], i) => {
-      const cy = panelY + 36 + i * 24;
+      const cy = panelY + 36 + i * 22;
       this.add.text(W / 2 - 12, cy, key, {
         fontSize: '10px', color: '#ffcc44', fontFamily: 'monospace',
       }).setOrigin(1, 0);
@@ -139,30 +139,39 @@ class MenuScene extends Phaser.Scene {
       });
     });
 
-    this.add.text(W / 2, panelY + 132, '4 beats · 120 BPM · rhythm drives everything', {
+    this.add.text(W / 2, panelY + 118, '4 beats · 120 BPM · rhythm drives everything', {
       fontSize: '9px', color: '#2a4a30', fontFamily: 'monospace',
     }).setOrigin(0.5);
 
-    // ---- Start prompt ----
-    const prompt = this.add.text(W / 2, 452, 'PRESS SPACE TO ENTER THE KINGDOM', {
-      fontSize: '13px', color: '#ffffff', fontFamily: 'monospace',
-      stroke: '#000000', strokeThickness: 3,
-    }).setOrigin(0.5);
+    // ---- Start button ----
+    const bx = W / 2, by = 420;
+    const startBtn = this.add.rectangle(bx, by, 220, 50, 0x1a4a22)
+      .setOrigin(0.5).setDepth(10).setInteractive({ useHandCursor: true })
+      .setStrokeStyle(2, 0x44ffaa);
+    startBtn.on('pointerdown', (p) => p.event.stopPropagation());
+    startBtn.on('pointerup', () => this._start());
+
+    const startLbl = this.add.text(bx, by, 'START', {
+      fontSize: '18px', color: '#44ffaa', fontFamily: 'monospace', fontStyle: 'bold',
+    }).setOrigin(0.5).setDepth(11);
+    startLbl.on('pointerdown', (p) => p.event.stopPropagation());
+    startLbl.on('pointerup', () => this._start());
 
     this.tweens.add({
-      targets: prompt,
-      alpha: { from: 1, to: 0.2 },
-      duration: 700, ease: 'Sine.easeInOut', yoyo: true, repeat: -1,
+      targets: startBtn,
+      alpha: { from: 1, to: 0.7 },
+      duration: 600, ease: 'Sine.easeInOut', yoyo: true, repeat: -1,
     });
 
     // ---- Input ----
-    this.input.keyboard.once('keydown-SPACE', () => {
-      // Resume AudioContext directly inside user gesture — must happen here
-      if (window.RK && window.RK._audio) window.RK._audio._ensureCtx();
-      this.cameras.main.flash(200, 20, 100, 40);
-      this.time.delayedCall(200, () => {
-        this.scene.start('GameScene', { level: 'level1' });
-      });
+    this.input.keyboard.once('keydown-SPACE', () => this._start());
+  }
+
+  _start() {
+    if (window.RK && window.RK._audio) window.RK._audio._ensureCtx();
+    this.cameras.main.flash(200, 20, 100, 40);
+    this.time.delayedCall(200, () => {
+      this.scene.start('GameScene', { level: 'level1' });
     });
   }
 }
