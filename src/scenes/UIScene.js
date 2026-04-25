@@ -10,7 +10,10 @@ class UIScene extends Phaser.Scene {
     this.timeline         = (data && data.timeline) || new RK.Timeline();
     this.currentBeat      = 0;
     this._unlockedActions = ['JUMP', 'ROLL'];
-    this._activeBeatCount = RK.BEAT_COUNT;
+    // Restore session values
+    const sess = window.RK && window.RK._session;
+    this._activeBeatCount = (sess && sess.beatCount) || RK.BEAT_COUNT;
+    this._savedTrackIndex = (sess && sess.trackIndex) || 1;
   }
 
   create() {
@@ -26,8 +29,13 @@ class UIScene extends Phaser.Scene {
     this._buildPanel();
     this._buildWells();
     this._buildPlayhead();
-    this._buildUnlockIndicator();
+    this._buildLockedRunesDisplay();
     this._buildMusicSelector();
+
+    // Apply saved beat count layout (if not default 8)
+    if (this._activeBeatCount !== RK.BEAT_COUNT) {
+      this._setActiveBeatCount(this._activeBeatCount);
+    }
 
     this.input.on('pointerdown', this._onPointerDown, this);
 
@@ -103,11 +111,54 @@ class UIScene extends Phaser.Scene {
       .setDepth(4).setAlpha(0.9).setScale(0.7);
   }
 
-  _buildUnlockIndicator() {
-    this._unlockTxt = this.add.text(8, 8, '', {
-      fontSize: '8px', color: '#44ffaa', fontFamily: 'monospace',
-    }).setDepth(5);
-    this._refreshUnlockDisplay();
+  _buildLockedRunesDisplay() {
+    const ALL_ACTIONS = ['JUMP', 'ROLL', 'COCONUT'];
+    this._runeIconObjs = [];
+
+    this.add.text(14, 3, 'RUNES', {
+      fontSize: '7px', color: '#cc9933', fontFamily: 'monospace', fontStyle: 'bold',
+    }).setDepth(5).setScrollFactor(0);
+
+    ALL_ACTIONS.forEach((action, i) => {
+      const x = 22 + i * 46;
+      const unlockedKey = 'action_' + action.toLowerCase();
+      const lockedKey   = 'action_' + action.toLowerCase() + '_locked';
+      const col = RK.ACTION_COLORS[action] || 0x888888;
+
+      // Icon — starts as locked version, swaps on unlock
+      const icon = this.add.image(x, 30, lockedKey)
+        .setScale(0.38).setAlpha(0.55).setDepth(5).setScrollFactor(0);
+
+      // Lock badge
+      const lockBadge = this.add.text(x + 8, 18, 'X', {
+        fontSize: '7px', color: '#ff4444', fontFamily: 'monospace', fontStyle: 'bold',
+      }).setOrigin(0.5).setDepth(6).setScrollFactor(0);
+
+      // Action name
+      const lbl = this.add.text(x, 49, action.slice(0, 3), {
+        fontSize: '6px', color: '#886633', fontFamily: 'monospace',
+      }).setOrigin(0.5).setDepth(5).setScrollFactor(0);
+
+      this._runeIconObjs.push({ action, icon, lockBadge, lbl, unlockedKey, lockedKey, col });
+    });
+
+    this._refreshLockedDisplay();
+  }
+
+  _refreshLockedDisplay() {
+    if (!this._runeIconObjs) return;
+    this._runeIconObjs.forEach(({ action, icon, lockBadge, lbl, unlockedKey, lockedKey, col }) => {
+      const unlocked = this._unlockedActions.includes(action);
+      if (unlocked) {
+        icon.setTexture(unlockedKey).setAlpha(1).setTint(0xffffff);
+        lockBadge.setVisible(false);
+        lbl.setStyle({ color: '#' + col.toString(16).padStart(6, '0') });
+      } else {
+        icon.setTexture(lockedKey).setAlpha(0.55).setTint(0x888888);
+        lockBadge.setVisible(true);
+        lbl.setStyle({ color: '#664422' });
+      }
+    });
   }
 
   _buildMusicSelector() {
@@ -211,12 +262,18 @@ class UIScene extends Phaser.Scene {
 
   _selectTrack(index) {
     this._trackIndex = index;
-    this.game.events.emit('rk_loop_change', { loopKey: this._tracks[index].key });
+    const track = this._tracks[index];
+    if (window.RK._session) {
+      window.RK._session.trackIndex = index;
+      window.RK._session.trackKey   = track.key;
+    }
+    this.game.events.emit('rk_loop_change', { loopKey: track.key });
     this._toggleSettings();
   }
 
   _setActiveBeatCount(n) {
     this._activeBeatCount = n;
+    if (window.RK._session) window.RK._session.beatCount = n;
 
     // Highlight active button in popup
     this._wellCountBtns.forEach(({ btn, lbl, n: bn }) => {
@@ -252,11 +309,6 @@ class UIScene extends Phaser.Scene {
     this.game.events.emit('rk_beat_count_change', { count: n });
   }
 
-  _refreshUnlockDisplay() {
-    const symbols = { JUMP: '↑ JUMP', ROLL: '⟳ ROLL', COCONUT: '○ COCO', PUNCH: '★ PUNCH' };
-    const txt = this._unlockedActions.map(a => symbols[a] || a).join('  ');
-    this._unlockTxt.setText(txt);
-  }
 
   // ---------------------------------------------------------------------------
   _updateWellVisuals() {
@@ -366,15 +418,17 @@ class UIScene extends Phaser.Scene {
   }
 
   _beatScreenPulse(beatIndex) {
+    if (!this._pulseRect) {
+      this._pulseRect = this.add.rectangle(
+        RK.WIDTH / 2, RK.HEIGHT / 2, RK.WIDTH, RK.HEIGHT, 0xffffff, 0
+      ).setDepth(10).setScrollFactor(0);
+    }
     const cols = [0xffffff, 0xff2222, 0xffee22, 0x22ff44];
     const col  = cols[beatIndex % 4];
-    const rect = this.add.rectangle(
-      RK.WIDTH / 2, RK.HEIGHT / 2,
-      RK.WIDTH, RK.HEIGHT, col, 0.1
-    ).setDepth(10).setScrollFactor(0);
+    this._pulseRect.setFillStyle(col, 0.1);
+    this.tweens.killTweensOf(this._pulseRect);
     this.tweens.add({
-      targets: rect, alpha: 0, duration: 200, ease: 'Sine.easeOut',
-      onComplete: () => rect.destroy(),
+      targets: this._pulseRect, fillAlpha: 0, duration: 220, ease: 'Sine.easeOut',
     });
   }
 
@@ -409,7 +463,7 @@ class UIScene extends Phaser.Scene {
     if (data && data.action && !this._unlockedActions.includes(data.action)) {
       this._unlockedActions.push(data.action);
       this.timeline.unlock(data.action);
-      this._refreshUnlockDisplay();
+      this._refreshLockedDisplay();
     }
   }
 

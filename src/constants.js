@@ -20,14 +20,16 @@ window.RK = {
   COYOTE_MS: 150,
   COCONUT_SPEED: 250,
 
-  ACTIONS: { JUMP: 'JUMP', ROLL: 'ROLL', COCONUT: 'COCONUT', PUNCH: 'PUNCH' },
+  ACTIONS: { JUMP: 'JUMP', ROLL: 'ROLL', COCONUT: 'COCONUT' },
 
   ACTION_COLORS: {
     JUMP:    0x44bb66,
     ROLL:    0x4488ff,
     COCONUT: 0xddaa22,
-    PUNCH:   0xff4433,
   },
+
+  // Persists across scene restarts for the browser session
+  _session: { beatCount: 8, trackIndex: 1, trackKey: 'backing_loop' },
 
   COLORS: {
     BG:      0x0d2318,

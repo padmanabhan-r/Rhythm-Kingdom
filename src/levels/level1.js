@@ -1,9 +1,8 @@
 // =============================================================================
 //  Rhythm Kingdom — Level 1: The Root Gate
-//  Intro level. Actions: JUMP + ROLL. Water pits, traps, mandatory gate roll.
-//
-//  Gate physics: tall wall bodies y=0-476 block standing (body top=462<476)
-//  but rolling player (body top=480>476) can pass underneath.
+//  Intro level. Actions: JUMP + ROLL.
+//  Elevated platforms reward exploration. Snakes on ground = instant death.
+//  Wide water pits require double jump.
 // =============================================================================
 
 window.RK.Levels = window.RK.Levels || {};
@@ -13,87 +12,101 @@ window.RK.Levels.level1 = {
   width: 3200,
   bgColor: 0x0d2318,
   nextLevel: 'level2',
-  playerStart: { x: 80, y: 482 },
+  playerStart: { x: 80, y: 462 },
   unlockedActions: ['JUMP', 'ROLL'],
 
   platforms: [
-    // ——— Section 1: Intro jungle path ———
-    { x: 0,    y: 498, w: 560,  type: 'jungle' },
+    // ——— Section 1: Intro path ———
+    { x: 0,    y: 498, w: 480,  type: 'jungle' },
+    // Elevated platform — first reward
+    { x: 160,  y: 380, w: 120,  type: 'jungle' },
 
-    // [WATER PIT 1: x=560-700, 140px — first gap, learn jump timing]
+    // [WATER PIT 1: x=480-640, 160px — learn single jump]
 
-    // ——— Section 2: Rhythm practice platforms ———
-    { x: 700,  y: 498, w: 160,  type: 'jungle' },
+    // ——— Section 2: Rhythm practice ———
+    { x: 640,  y: 498, w: 160,  type: 'jungle' },
+    // Elevated
+    { x: 680,  y: 360, w: 100,  type: 'jungle' },
 
-    // [WATER PIT 2: x=860-1040, 180px]
+    // [WATER PIT 2: x=800-1060, 260px — requires double jump]
 
-    { x: 1040, y: 498, w: 160,  type: 'jungle' },
+    { x: 1060, y: 498, w: 160,  type: 'jungle' },
+    { x: 1100, y: 370, w: 100,  type: 'jungle' },
 
-    // [WATER PIT 3: x=1200-1380, 180px]
+    // [WATER PIT 3: x=1220-1420, 200px]
 
-    // ——— Section 3: Long approach to Root Gate ———
-    { x: 1380, y: 498, w: 820,  type: 'jungle' },   // x=1380-2200
+    // ——— Section 3: Long approach ———
+    { x: 1420, y: 498, w: 760,  type: 'jungle' },  // x=1420-2180
+    // Elevated platforms in long section
+    { x: 1480, y: 370, w: 120,  type: 'jungle' },
+    { x: 1720, y: 340, w: 140,  type: 'jungle' },
+    { x: 1960, y: 370, w: 100,  type: 'jungle' },
 
-    // Gate wall structure (on top of floor above)
-    { x: 1980, y: 498, w: 200,  type: 'gate' },
+    // Gate pillars (visual only, no ceiling block)
+    { x: 2020, y: 498, w: 160,  type: 'gate' },
 
     // ——— Section 4: Post-gate gauntlet ———
-    { x: 2200, y: 498, w: 140,  type: 'jungle' },
+    { x: 2200, y: 498, w: 120,  type: 'jungle' },
+    { x: 2230, y: 360, w: 100,  type: 'jungle' },
 
-    // [WATER PIT 4: x=2340-2520, 180px]
+    // [WATER PIT 4: x=2320-2580, 260px — requires double jump]
 
-    { x: 2520, y: 498, w: 140,  type: 'jungle' },
+    { x: 2580, y: 498, w: 120,  type: 'jungle' },
+    { x: 2620, y: 370, w: 100,  type: 'jungle' },
 
-    // [WATER PIT 5: x=2660-2820, 160px]
+    // [WATER PIT 5: x=2700-2880, 180px]
 
-    // ——— Section 5: Final sprint to exit ———
-    { x: 2820, y: 498, w: 380,  type: 'jungle' },
+    // ——— Section 5: Final sprint ———
+    { x: 2880, y: 498, w: 320,  type: 'jungle' },
+    { x: 2940, y: 360, w: 140,  type: 'jungle' },
   ],
 
   water: [
-    { x: 560,  y: 500, w: 140, h: 120 },
-    { x: 860,  y: 500, w: 180, h: 120 },
-    { x: 1200, y: 500, w: 180, h: 120 },
-    { x: 2340, y: 500, w: 180, h: 120 },
-    { x: 2660, y: 500, w: 160, h: 120 },
+    { x: 480,  y: 500, w: 160, h: 120 },   // pit 1 — single jump
+    { x: 800,  y: 500, w: 260, h: 120 },   // pit 2 — needs double jump
+    { x: 1220, y: 500, w: 200, h: 120 },   // pit 3
+    { x: 2320, y: 500, w: 260, h: 120 },   // pit 4 — needs double jump
+    { x: 2700, y: 500, w: 180, h: 120 },   // pit 5
   ],
 
   thorns: [
-    { x: 180,  y: 513 },
-    { x: 340,  y: 513 },
-    { x: 490,  y: 513 },
-    { x: 740,  y: 513 },
-    { x: 820,  y: 513 },
-    { x: 1080, y: 513 },
-    { x: 1160, y: 513 },
-    { x: 1460, y: 513 },
-    { x: 1640, y: 513 },
-    { x: 1830, y: 513 },
-    { x: 1940, y: 513 },
-    { x: 2230, y: 513 },
-    { x: 2290, y: 513 },
-    { x: 2570, y: 513 },
-    { x: 2640, y: 513 },
-    { x: 2870, y: 513 },
-    { x: 3020, y: 513 },
-    { x: 3110, y: 513 },
+    { x: 120,  y: 513 }, { x: 280,  y: 513 }, { x: 420,  y: 513 },
+    { x: 680,  y: 513 }, { x: 760,  y: 513 },
+    { x: 1100, y: 513 }, { x: 1160, y: 513 },
+    { x: 1480, y: 513 }, { x: 1600, y: 513 }, { x: 1840, y: 513 },
+    { x: 1960, y: 513 }, { x: 2080, y: 513 },
+    { x: 2240, y: 513 }, { x: 2280, y: 513 },
+    { x: 2600, y: 513 }, { x: 2640, y: 513 },
+    { x: 2920, y: 513 }, { x: 3020, y: 513 }, { x: 3120, y: 513 },
   ],
 
   enemies: [
-    { x: 380,  y: 462, type: 'lizard', patrol: [280,  520]  },
-    { x: 1520, y: 462, type: 'lizard', patrol: [1430, 1640] },
-    { x: 2250, y: 462, type: 'lizard', patrol: [2210, 2320] },
-    { x: 2900, y: 462, type: 'lizard', patrol: [2860, 3060] },
-    { x: 3090, y: 462, type: 'lizard', patrol: [3020, 3180] },
+    { x: 340,  y: 462, type: 'snake',  patrol: [240,  460]  },
+    { x: 1520, y: 462, type: 'snake',  patrol: [1430, 1640] },
+    { x: 1780, y: 462, type: 'lizard', patrol: [1720, 1940] },
+    { x: 2240, y: 462, type: 'snake',  patrol: [2210, 2300] },
+    { x: 2640, y: 462, type: 'lizard', patrol: [2600, 2680] },
+    { x: 2960, y: 462, type: 'snake',  patrol: [2900, 3100] },
   ],
 
   checkpoints: [
-    { x: 2520, y: 458 },
+    { x: 2580, y: 458 },
+  ],
+
+  bananas: [
+    // On elevated platforms
+    { x: 200,  y: 356 }, { x: 230, y: 356 },
+    { x: 720,  y: 336 }, { x: 750, y: 336 },
+    { x: 1130, y: 346 }, { x: 1160, y: 346 },
+    { x: 1520, y: 346 }, { x: 1550, y: 346 },
+    { x: 1750, y: 316 }, { x: 1800, y: 316 },
+    { x: 2650, y: 346 }, { x: 2680, y: 346 },
+    { x: 2970, y: 336 }, { x: 3010, y: 336 },
   ],
 
   pickups: [],
 
   exit: { x: 3140, y: 458 },
 
-  hint: 'JUMP over water pits.  ROLL squeezes through the stone gate.',
+  hint: 'JUMP over water. DOUBLE JUMP wide gaps. Avoid snakes!',
 };

@@ -99,14 +99,14 @@ class MenuScene extends Phaser.Scene {
 
     const tb = this.add.graphics().setDepth(9);
     tb.fillStyle(0x000000, 0.55);
-    tb.fillRoundedRect(W / 2 - 300, 12, 600, 116, 12);
+    tb.fillRoundedRect(W / 2 - 300, 12, 600, 134, 12);
     tb.lineStyle(2, 0xcc9933, 1);
-    tb.strokeRoundedRect(W / 2 - 300, 12, 600, 116, 12);
+    tb.strokeRoundedRect(W / 2 - 300, 12, 600, 134, 12);
     tb.lineStyle(1, 0x44ffaa, 0.4);
-    tb.strokeRoundedRect(W / 2 - 296, 16, 592, 108, 10);
+    tb.strokeRoundedRect(W / 2 - 296, 16, 592, 126, 10);
 
     // Decorative corner dots
-    [[W/2-292,20],[W/2+292,20],[W/2-292,120],[W/2+292,120]].forEach(([x,y]) => {
+    [[W/2-292,20],[W/2+292,20],[W/2-292,138],[W/2+292,138]].forEach(([x,y]) => {
       tb.fillStyle(0xcc9933); tb.fillCircle(x, y, 3);
     });
 
@@ -122,10 +122,15 @@ class MenuScene extends Phaser.Scene {
       shadow: { x: 2, y: 3, color: '#001a0e', blur: 10, fill: true },
     }).setOrigin(0.5).setDepth(10);
 
-    // Tagline — visible amber with stroke
-    this.add.text(W / 2, 138, "✦  A Gorilla's Rhythm Journey  ✦", {
+    // Tagline
+    this.add.text(W / 2, 126, "✦  A Monkey's Rhythm Journey  ✦", {
       fontSize: '12px', color: '#ddaa44', fontFamily: 'monospace', fontStyle: 'italic',
       stroke: '#1a0e00', strokeThickness: 3,
+    }).setOrigin(0.5).setDepth(10);
+
+    this.add.text(W / 2, 162, 'Powered by the Rhythm of ElevenLabs  |  Developed using Zed', {
+      fontSize: '13px', color: '#88aacc', fontFamily: 'monospace',
+      stroke: '#0a0a1a', strokeThickness: 2,
     }).setOrigin(0.5).setDepth(10);
 
     this.tweens.add({
@@ -138,19 +143,13 @@ class MenuScene extends Phaser.Scene {
 
   // ---------------------------------------------------------------------------
   _buildGorilla(W) {
-    const GX = W / 2, GY = 272;
+    const GX = W / 2, GY = 248;
     const SCALE = 2.5;
     const FRAMES = ['dance_monk_idle', 'dance_monk_l', 'dance_monk_idle', 'dance_monk_r'];
 
     this._gorilla = this.add.image(GX, GY, FRAMES[0]).setScale(SCALE).setDepth(8);
 
-    // 4 beat indicator dots below gorilla
     this._beatDots = [];
-    for (let i = 0; i < 4; i++) {
-      const dot = this.add.circle(GX - 45 + i * 30, GY + 62, 6, 0x1a3322).setDepth(6);
-      dot.setStrokeStyle(2, 0x44ffaa, 0.6);
-      this._beatDots.push(dot);
-    }
 
     let beatIdx = 0;
     this.time.addEvent({
@@ -212,7 +211,7 @@ class MenuScene extends Phaser.Scene {
   // ---------------------------------------------------------------------------
   // Controls + start button in one centered horizontal bar
   _buildBottomBar(W) {
-    const PX = 80, PY = 362, PW = 800, PH = 118;
+    const PX = 80, PY = 338, PW = 800, PH = 118;
     const MID = PX + PW / 2;   // 480
     const LCX = PX + PW / 4;   // 280  — left half centre
     const RCX = PX + PW * 3/4; // 680  — right half centre

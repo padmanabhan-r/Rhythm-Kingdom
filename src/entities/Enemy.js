@@ -9,7 +9,7 @@
 window.RK.Enemy = class Enemy extends Phaser.Physics.Arcade.Sprite {
 
   constructor(scene, x, y, type) {
-    const tex = { lizard: 'enemy_lizard', bat: 'enemy_bat', guardian: 'enemy_guardian' }[type]
+    const tex = { lizard: 'enemy_lizard', bat: 'enemy_bat', guardian: 'enemy_guardian', snake: 'enemy_snake' }[type]
       || 'enemy_lizard';
 
     super(scene, x, y, tex);
@@ -19,13 +19,14 @@ window.RK.Enemy = class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.type   = type;
     this.alive  = true;
     this.direction = 1;
-    this.speed  = type === 'bat' ? 50 : 60;
+    this.speed  = type === 'bat' ? 50 : type === 'snake' ? 45 : 60;
 
     this.leftBound  = x - 64;
     this.rightBound = x + 64;
 
     this.body.setCollideWorldBounds(true);
     this.body.setAllowGravity(type !== 'bat');
+    if (type === 'snake') { this.body.setSize(30, 10); this.body.setOffset(0, 6); }
     this.setDepth(4);
 
     if (type === 'bat') {
@@ -42,8 +43,7 @@ window.RK.Enemy = class Enemy extends Phaser.Physics.Arcade.Sprite {
     if (right !== undefined) this.rightBound = right;
   }
 
-  canRoll()    { return this.type === 'lizard'; }
-  canPunch()   { return this.type === 'lizard' || this.type === 'bat'; }
+  canRoll()    { return this.type === 'lizard' || this.type === 'snake'; }
   canCoconut() { return true; }
 
   update(delta) {

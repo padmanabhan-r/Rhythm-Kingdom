@@ -42,7 +42,17 @@ window.RK.Levels.level2 = {
     { x: 500, y: 350, type: 'relic_shard', unlocks: 'COCONUT' },
   ],
 
+  bananas: [
+    { x: 420,  y: 355 }, { x: 450, y: 355 },
+    { x: 700,  y: 295 }, { x: 730, y: 295 },
+    { x: 940,  y: 355 }, { x: 970, y: 355 },
+    { x: 1150, y: 275 }, { x: 1180, y: 275 },
+    { x: 1500, y: 355 }, { x: 1540, y: 355 },
+    { x: 1850, y: 295 }, { x: 1880, y: 295 },
+    { x: 2140, y: 355 }, { x: 2180, y: 355 },
+  ],
+
   exit: { x: 2360, y: 360 },
 
-  hint: 'Grab the relic shard to unlock Coconut Throw!',
+  hint: 'Collect the rune shard to unlock Coconut Throw!',
 };

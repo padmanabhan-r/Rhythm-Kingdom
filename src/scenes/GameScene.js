@@ -13,6 +13,8 @@ class GameScene extends Phaser.Scene {
     this._checkpointX     = null;
     this._checkpointY     = null;
     this._activeBeatCount = RK.BEAT_COUNT;
+    this._bananaCount     = 0;
+    this._enemyDeath      = false;
   }
 
   create() {
@@ -38,6 +40,7 @@ class GameScene extends Phaser.Scene {
     this.enemyGroup      = this.add.group();
     this.pickupGroup     = this.add.group();
     this.coconutGroup    = this.add.group();
+    this.bananaGroup     = this.add.group();
     this.checkpointGroup = [];
 
     RK.GameSceneBuilder.buildPlatforms(this, ld);
@@ -45,6 +48,7 @@ class GameScene extends Phaser.Scene {
     RK.GameSceneBuilder.buildWater(this, ld);
     RK.GameSceneBuilder.buildEnemies(this, ld);
     RK.GameSceneBuilder.buildPickups(this, ld);
+    RK.GameSceneBuilder.buildBananas(this, ld);
     RK.GameSceneBuilder.buildCheckpoints(this, ld);
     RK.GameSceneBuilder.buildExit(this, ld);
 
@@ -58,7 +62,7 @@ class GameScene extends Phaser.Scene {
     this._buildHUD(ld);
     this._bindEvents();
 
-    const loopKey = (ld.loopKey || 'backing_loop');
+    const loopKey = (window.RK._session && window.RK._session.trackKey) || ld.loopKey || 'backing_loop';
     this._rhythmClock = new RK.RhythmClock(this._audio, this.game.events, loopKey);
     this._audio._ensureCtx();
     this._rhythmClock.start();
@@ -157,6 +161,11 @@ class GameScene extends Phaser.Scene {
     this.add.text(6, RK.PLAY_HEIGHT - 12, 'A/D  move', {
       fontSize: '8px', color: '#334444', fontFamily: 'monospace',
     }).setDepth(10).setScrollFactor(0);
+
+    this._bananaTxt = this.add.text(6, 8, 'B x0', {
+      fontSize: '10px', color: '#ffee22', fontFamily: 'monospace',
+      backgroundColor: '#00000066', padding: { x: 4, y: 2 },
+    }).setDepth(10).setScrollFactor(0);
   }
 
   // ---------------------------------------------------------------------------
@@ -175,6 +184,7 @@ class GameScene extends Phaser.Scene {
     this.physics.add.overlap(this.player, this.enemyGroup,     (p, e) => this._playerHitEnemy(e));
     this.physics.add.overlap(this.player, this.pickupGroup,    (p, pk) => this._playerPickup(pk));
     this.physics.add.overlap(this.player, this.exitZone,       () => this._completeLevel());
+    this.physics.add.overlap(this.player, this.bananaGroup,    (p, b) => this._collectBanana(b));
     this.physics.add.overlap(this.coconutGroup, this.enemyGroup, (c, e) => this._coconutHitEnemy(c, e));
 
     this.checkpointGroup.forEach(zone => {
@@ -192,15 +202,14 @@ class GameScene extends Phaser.Scene {
   // ---------------------------------------------------------------------------
 
   _bindEvents() {
-    this.game.events.on('rk_beat',          this._onBeat,          this);
-    this.game.events.on('rk_spawn_coconut', this._onSpawnCoconut,  this);
-    this.game.events.on('rk_player_punch',  this._onPlayerPunch,   this);
-    this.game.events.on('rk_player_land',   this._onPlayerLand,    this);
-    this.game.events.on('rk_player_roll',   this._onPlayerRoll,    this);
-    this.game.events.on('rk_player_hit',    this._onPlayerHit,     this);
-    this.game.events.on('rk_player_dead',   this._onPlayerDead,    this);
-    this.game.events.on('rk_loop_change',        this._onLoopChange,       this);
-    this.game.events.on('rk_beat_count_change',  this._onBeatCountChange,  this);
+    this.game.events.on('rk_beat',               this._onBeat,            this);
+    this.game.events.on('rk_spawn_coconut',      this._onSpawnCoconut,    this);
+    this.game.events.on('rk_player_land',        this._onPlayerLand,      this);
+    this.game.events.on('rk_player_roll',        this._onPlayerRoll,      this);
+    this.game.events.on('rk_player_hit',         this._onPlayerHit,       this);
+    this.game.events.on('rk_player_dead',        this._onPlayerDead,      this);
+    this.game.events.on('rk_loop_change',        this._onLoopChange,      this);
+    this.game.events.on('rk_beat_count_change',  this._onBeatCountChange, this);
   }
 
   // ---------------------------------------------------------------------------
@@ -262,7 +271,7 @@ class GameScene extends Phaser.Scene {
     }
 
 
-    const SFX = { JUMP: 'jump', ROLL: 'roll', COCONUT: 'coconut_throw', PUNCH: 'punch' };
+    const SFX = { JUMP: 'jump', ROLL: 'roll', COCONUT: 'coconut_throw' };
     this._audio.play(SFX[action], 1.0);
     this.game.events.emit('rk_slot_success', beatIndex);
 
@@ -276,7 +285,6 @@ class GameScene extends Phaser.Scene {
       }
       case 'ROLL':    this.player.doRoll();    break;
       case 'COCONUT': this.player.doCoconut(); break;
-      case 'PUNCH':   this.player.doPunch();   break;
     }
   }
 
@@ -298,24 +306,7 @@ class GameScene extends Phaser.Scene {
     this.coconutGroup.add(c);
   }
 
-  _onPlayerPunch(data) {
-    let hit = false;
-    this.enemyGroup.getChildren().forEach(e => {
-      if (!e.alive) return;
-      const dx = Math.abs(e.x - data.x);
-      const dy = Math.abs(e.y - data.y);
-      if (dx < 60 && dy < 40 && e.canPunch()) {
-        e.die(); hit = true;
-        this._gameFeel.impactSpark(e.x, e.y);
-      }
-    });
-    if (hit) {
-      this._gameFeel.hitstop(60);
-      this._gameFeel.screenShake(3, 150);
-    }
-  }
-
-  _onPlayerLand(data) { this._gameFeel.dustBurst(data.x, data.y + 14); }
+_onPlayerLand(data) { this._gameFeel.dustBurst(data.x, data.y + 14); }
   _onPlayerRoll(data) { this._gameFeel.rollTrail(data.x, data.y); }
 
   _onPlayerHit() {
@@ -328,7 +319,7 @@ class GameScene extends Phaser.Scene {
     this.cameras.main.flash(200, 255, 60, 60);
     if (this._rhythmClock) this._rhythmClock.stop();
 
-    if (this._checkpointX !== null) {
+    if (this._checkpointX !== null && !this._enemyDeath) {
       this.time.delayedCall(600, () => {
         this.player.revive(this._checkpointX, this._checkpointY - 40);
         this.timeline.clearAll();
@@ -357,13 +348,26 @@ class GameScene extends Phaser.Scene {
   }
 
   _playerHitEnemy(enemy) {
-    if (!enemy || !enemy.alive || this.player.invincible || this.player.dead) return;
+    if (!enemy || !enemy.alive || this.player.dead) return;
     if (this.player.isRolling && enemy.canRoll()) {
       enemy.die();
       this._gameFeel.dustBurst(enemy.x, enemy.y);
       return;
     }
-    this.player.takeDamage(enemy.x < this.player.x ? 1 : -1);
+    if (this.player.invincible) return;
+    // Enemy touch = instant death, restart from beginning
+    this._enemyDeath = true;
+    this.player.die();
+  }
+
+  _collectBanana(banana) {
+    if (!banana || !banana.active) return;
+    banana.setActive(false).setVisible(false);
+    if (banana.body) banana.body.enable = false;
+    this._bananaCount++;
+    if (this._bananaTxt) this._bananaTxt.setText('B x' + this._bananaCount);
+    this._gameFeel.impactSpark(banana.x, banana.y);
+    this.time.delayedCall(16, () => { if (banana) banana.destroy(); });
   }
 
   _playerPickup(pickup) {
@@ -455,13 +459,12 @@ class GameScene extends Phaser.Scene {
   // ---------------------------------------------------------------------------
   shutdown() {
     if (this._rhythmClock) this._rhythmClock.stop();
-    this.game.events.off('rk_beat',          this._onBeat,          this);
-    this.game.events.off('rk_spawn_coconut', this._onSpawnCoconut,  this);
-    this.game.events.off('rk_player_punch',  this._onPlayerPunch,   this);
-    this.game.events.off('rk_player_land',   this._onPlayerLand,    this);
-    this.game.events.off('rk_player_roll',   this._onPlayerRoll,    this);
-    this.game.events.off('rk_player_hit',    this._onPlayerHit,     this);
-    this.game.events.off('rk_player_dead',   this._onPlayerDead,    this);
+    this.game.events.off('rk_beat',               this._onBeat,            this);
+    this.game.events.off('rk_spawn_coconut',      this._onSpawnCoconut,    this);
+    this.game.events.off('rk_player_land',        this._onPlayerLand,      this);
+    this.game.events.off('rk_player_roll',        this._onPlayerRoll,      this);
+    this.game.events.off('rk_player_hit',         this._onPlayerHit,       this);
+    this.game.events.off('rk_player_dead',        this._onPlayerDead,      this);
     this.game.events.off('rk_loop_change',        this._onLoopChange,      this);
     this.game.events.off('rk_beat_count_change',  this._onBeatCountChange, this);
   }

@@ -42,11 +42,21 @@ window.RK.Levels.level3 = {
     { x: 1540, y: 270 },
   ],
 
-  pickups: [
-    { x: 900, y: 235, type: 'relic_shard', unlocks: 'PUNCH' },
+  pickups: [],
+
+  bananas: [
+    { x: 370,  y: 355 }, { x: 400, y: 355 },
+    { x: 600,  y: 285 }, { x: 630, y: 285 },
+    { x: 820,  y: 235 }, { x: 850, y: 235 },
+    { x: 1040, y: 285 }, { x: 1070, y: 285 },
+    { x: 1320, y: 355 }, { x: 1350, y: 355 },
+    { x: 1600, y: 275 }, { x: 1630, y: 275 },
+    { x: 1880, y: 215 }, { x: 1910, y: 215 },
+    { x: 2150, y: 275 }, { x: 2180, y: 275 },
+    { x: 2520, y: 355 }, { x: 2550, y: 355 },
   ],
 
   exit: { x: 2750, y: 360 },
 
-  hint: 'All four beats. Reach the heart of the kingdom.',
+  hint: 'Three runes. Reach the heart of the kingdom.',
 };

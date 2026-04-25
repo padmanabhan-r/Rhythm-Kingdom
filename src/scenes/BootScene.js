@@ -25,6 +25,10 @@ class BootScene extends Phaser.Scene {
     // Hazard + trap tiles
     this.load.image('water_tile',  'assets-packs/JungleAssets/Water/WaterTile1.png');
     this.load.image('jungle_trap', 'assets-packs/JungleAssets/Trap/JungleTrap1.png');
+
+    // Fruit collectibles
+    this.load.image('fruit_0', 'assets-packs/Fruits/MelonCantaloupe.png');
+    this.load.image('fruit_1', 'assets-packs/Fruits/MelonHoneydew.png');
   }
 
   create() {
@@ -291,20 +295,52 @@ class BootScene extends Phaser.Scene {
       g.generateTexture('coconut', 14, 14);
     } catch(e) {}
 
-    // ------------------------------------------------------------------- UI
-
-    // beat_well (80×80)
+// enemy_snake (34×14) — elongated ground snake
     try {
       g.clear();
-      g.fillStyle(0x2a2015); g.fillRoundedRect(0, 0, 80, 80, 8);
-      g.fillStyle(0x3a3020); g.fillRoundedRect(2, 2, 76, 76, 7);
-      g.fillStyle(0xcc9933); g.fillRoundedRect(3, 3, 74, 74, 6);
-      g.fillStyle(0x3a3020); g.fillRoundedRect(5, 5, 70, 70, 5);
-      g.fillStyle(0x0d1810); g.fillRoundedRect(8, 8, 64, 64, 4);
-      g.fillStyle(0x1a2815); g.fillRoundedRect(10, 10, 60, 60, 3);
-      g.lineStyle(1, 0xcc9933, 0.4); g.strokeRoundedRect(12, 12, 56, 56, 3);
-      g.fillStyle(0xffcc44); g.fillRect(5, 5, 4, 4); g.fillRect(71, 5, 4, 4);
-      g.fillRect(5, 71, 4, 4); g.fillRect(71, 71, 4, 4);
+      // Body segments
+      g.fillStyle(0x2a6e18); g.fillEllipse(17, 9, 32, 12);
+      g.fillStyle(0x3a8e22); g.fillEllipse(17, 8, 30, 9);
+      // Diamond pattern
+      g.fillStyle(0x1a5010); g.fillRect(8, 6, 4, 4); g.fillRect(16, 6, 4, 4); g.fillRect(24, 6, 4, 4);
+      // Head
+      g.fillStyle(0x1a5010); g.fillEllipse(4, 8, 10, 10);
+      g.fillStyle(0x2a6e18); g.fillEllipse(4, 7, 8, 8);
+      // Eye
+      g.fillStyle(0xffdd00); g.fillCircle(3, 5, 2);
+      g.fillStyle(0x110000); g.fillCircle(3, 5, 1);
+      // Forked tongue
+      g.fillStyle(0xff2222); g.fillRect(0, 8, 4, 1);
+      g.fillRect(0, 7, 2, 1); g.fillRect(0, 9, 2, 1);
+      // Tail
+      g.fillStyle(0x1a5010); g.fillTriangle(33, 6, 33, 12, 28, 9);
+      g.generateTexture('enemy_snake', 34, 14);
+    } catch(e) {}
+
+    // ------------------------------------------------------------------- UI
+
+    // beat_well (80×80) — octagonal rune holder
+    try {
+      g.clear();
+      const C = 20; // corner cut
+      const oct = [{x:C,y:0},{x:80-C,y:0},{x:80,y:C},{x:80,y:80-C},{x:80-C,y:80},{x:C,y:80},{x:0,y:80-C},{x:0,y:C}];
+      const oct2 = [{x:C+3,y:3},{x:80-C-3,y:3},{x:77,y:C+3},{x:77,y:80-C-3},{x:80-C-3,y:77},{x:C+3,y:77},{x:3,y:80-C-3},{x:3,y:C+3}];
+      const oct3 = [{x:C+5,y:5},{x:80-C-5,y:5},{x:75,y:C+5},{x:75,y:80-C-5},{x:80-C-5,y:75},{x:C+5,y:75},{x:5,y:80-C-5},{x:5,y:C+5}];
+      const inner = [{x:C+10,y:10},{x:80-C-10,y:10},{x:70,y:C+10},{x:70,y:80-C-10},{x:80-C-10,y:70},{x:C+10,y:70},{x:10,y:80-C-10},{x:10,y:C+10}];
+      g.fillStyle(0x1a1208); g.fillPoints(oct, true);
+      g.fillStyle(0xcc9933); g.fillPoints(oct2, true);
+      g.fillStyle(0x2a1e08); g.fillPoints(oct3, true);
+      g.fillStyle(0x0d1408); g.fillPoints(inner, true);
+      // Carved rune marks — centre cross lines
+      g.lineStyle(1, 0xcc9933, 0.35);
+      g.beginPath(); g.moveTo(40, 16); g.lineTo(40, 64); g.strokePath();
+      g.beginPath(); g.moveTo(16, 40); g.lineTo(64, 40); g.strokePath();
+      // Small gem at centre
+      g.fillStyle(0x44ffaa, 0.4); g.fillCircle(40, 40, 5);
+      g.fillStyle(0x88ffcc, 0.6); g.fillCircle(40, 40, 2);
+      // Corner dots
+      g.fillStyle(0xffcc44, 0.7);
+      [[C,4],[80-C,4],[4,C],[76,C],[4,80-C],[76,80-C],[C,76],[80-C,76]].forEach(([x,y]) => g.fillCircle(x,y,2));
       g.generateTexture('beat_well', 80, 80);
     } catch(e) {}
 
@@ -326,7 +362,9 @@ class BootScene extends Phaser.Scene {
     RK.BootTextures.actionIcon(g, 'action_jump',    RK.ACTION_COLORS.JUMP,    'jump');
     RK.BootTextures.actionIcon(g, 'action_roll',    RK.ACTION_COLORS.ROLL,    'roll');
     RK.BootTextures.actionIcon(g, 'action_coconut', RK.ACTION_COLORS.COCONUT, 'coconut');
-    RK.BootTextures.actionIcon(g, 'action_punch',   RK.ACTION_COLORS.PUNCH,   'punch');
+    // Grey locked versions of rune cards
+    RK.BootTextures.actionIcon(g, 'action_roll_locked',    0x445566, 'roll');
+    RK.BootTextures.actionIcon(g, 'action_coconut_locked', 0x445544, 'coconut');
 
     // playhead (8×72)
     try {

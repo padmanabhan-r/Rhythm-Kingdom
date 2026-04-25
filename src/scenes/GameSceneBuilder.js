@@ -56,12 +56,11 @@ window.RK.GameSceneBuilder = {
         gfx.fillStyle(0xcc9933, 0.5); gfx.fillRect(wx + wallW / 2 - 24, 475, 48, 2);
         gfx.fillStyle(0x2a2015); gfx.fillEllipse(wx + wallW / 2, 480, 50, 10);
         // Physics: tall walls (y=0-476) — standing blocked (top=462<476), rolling passes (top=480>476)
+        // Two pillars only — no ceiling block, player walks through freely
         const lPillar = scene.wallGroup.create(wx + 13, 238, 'px');
         lPillar.setDisplaySize(26, 476).setAlpha(0).refreshBody();
         const rPillar = scene.wallGroup.create(wx + wallW - 13, 238, 'px');
         rPillar.setDisplaySize(26, 476).setAlpha(0).refreshBody();
-        const pBlock = scene.ceilingGroup.create(wx + wallW / 2, 238, 'px');
-        pBlock.setDisplaySize(wallW - 52, 476).setAlpha(0).refreshBody();
         return;
       }
       // Jungle platform: moss top + carved stone base
@@ -124,6 +123,23 @@ window.RK.GameSceneBuilder = {
     });
   },
 
+  buildBananas(scene, ld) {
+    (ld.bananas || []).forEach((b, i) => {
+      const key = 'fruit_' + (i % 2);
+      const spr = scene.physics.add.sprite(b.x, b.y, key);
+      spr.setScale(0.9);
+      spr.body.setAllowGravity(false);
+      spr.body.setImmovable(true);
+      spr.setDepth(3);
+      scene.tweens.add({
+        targets: spr, y: b.y - 7,
+        duration: 900, ease: 'Sine.easeInOut', yoyo: true, repeat: -1,
+        delay: (i * 120) % 600,
+      });
+      scene.bananaGroup.add(spr);
+    });
+  },
+
   buildPickups(scene, ld) {
     (ld.pickups || []).forEach(p => {
       const sprite = scene.physics.add.sprite(p.x, p.y, 'relic_shard');
@@ -131,7 +147,7 @@ window.RK.GameSceneBuilder = {
       sprite.body.setImmovable(true);
       sprite.setDepth(3);
       sprite.setData('unlocks', p.unlocks);
-      const tints = { COCONUT: 0xddaa22, PUNCH: 0xff4433 };
+      const tints = { COCONUT: 0xddaa22 };
       if (tints[p.unlocks]) sprite.setTint(tints[p.unlocks]);
       scene.tweens.add({
         targets: sprite, y: p.y - 8, angle: 360,

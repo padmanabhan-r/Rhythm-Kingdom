@@ -54,38 +54,47 @@ window.RK.BootTextures = {
   actionIcon(g, key, color, type) {
     try {
       g.clear();
+      // Dark background with color tint
       g.fillStyle(0x0d1810); g.fillRoundedRect(0, 0, 56, 56, 6);
-      g.fillStyle(color, 0.25); g.fillRoundedRect(2, 2, 52, 52, 5);
+      g.fillStyle(color, 0.2); g.fillRoundedRect(2, 2, 52, 52, 5);
+      // Rune border marks
+      g.lineStyle(1, color, 0.5);
+      g.strokeRoundedRect(3, 3, 50, 50, 4);
       g.fillStyle(color);
       switch (type) {
         case 'jump':
-          g.fillTriangle(28, 10, 14, 34, 42, 34);
-          g.fillRect(22, 32, 12, 12);
+          // Lightning bolt rune — upward strike with serifs
+          g.fillTriangle(28, 8, 20, 30, 36, 30);   // top spike
+          g.fillRect(24, 28, 8, 6);                  // neck connector
+          g.fillTriangle(20, 32, 38, 32, 28, 50);   // lower bolt
+          // Rune serifs
+          g.fillRect(14, 15, 10, 3);
+          g.fillRect(32, 15, 10, 3);
+          g.fillRect(12, 38, 10, 3);
+          g.fillRect(34, 38, 10, 3);
           break;
         case 'roll':
-          g.fillStyle(color); g.fillCircle(28, 28, 16);
-          g.fillStyle(0x0d1810); g.fillCircle(28, 28, 9);
-          g.fillStyle(color); g.fillTriangle(28, 12, 38, 22, 20, 22);
+          // Spiral rune — coiling energy rings
+          g.fillCircle(28, 28, 16);
+          g.fillStyle(0x0d1810); g.fillCircle(28, 28, 11);
+          g.fillStyle(color); g.fillCircle(28, 28, 6);
+          g.fillStyle(0x0d1810); g.fillCircle(28, 28, 2);
+          // Tail
+          g.fillStyle(color); g.fillTriangle(40, 18, 50, 12, 46, 26);
           break;
         case 'coconut':
-          g.fillStyle(color); g.fillCircle(16, 40, 5);
-          g.fillCircle(40, 16, 5);
+          // Crescent + arc throw rune
+          g.fillCircle(16, 32, 12);
+          g.fillStyle(0x0d1810); g.fillCircle(21, 28, 10);
+          g.fillStyle(color);
+          // Arc trajectory dots
           for (let t = 0; t <= 1; t += 0.12) {
-            const x = 16 + t * 24;
-            const y = 40 - t * 24 + t * (1 - t) * (-20);
-            g.fillCircle(x, y, 2);
+            const x = 20 + t * 22;
+            const y = 38 - t * 22 + t * (1 - t) * (-14);
+            g.fillCircle(x, y, 2.5);
           }
-          break;
-        case 'punch':
-          g.fillTriangle(28, 10, 24, 24, 32, 24);
-          g.fillTriangle(28, 46, 24, 32, 32, 32);
-          g.fillTriangle(10, 28, 24, 24, 24, 32);
-          g.fillTriangle(46, 28, 32, 24, 32, 32);
-          g.fillTriangle(13, 13, 23, 23, 24, 18);
-          g.fillTriangle(43, 13, 33, 23, 32, 18);
-          g.fillTriangle(13, 43, 23, 33, 18, 32);
-          g.fillTriangle(43, 43, 33, 33, 38, 32);
-          g.fillCircle(28, 28, 7);
+          // Impact dot
+          g.fillCircle(42, 14, 5);
           break;
       }
       g.generateTexture(key, 56, 56);
