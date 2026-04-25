@@ -9,14 +9,13 @@ class GameScene extends Phaser.Scene {
   init(data) {
     this.levelKey   = (data && data.level) || 'level1';
     this.levelData  = RK.Levels[this.levelKey];
-    this.mode       = 'edit';
     this._complete  = false;
     this._checkpointX = null;
     this._checkpointY = null;
   }
 
   create() {
-    if (!this.levelData) { console.error('[RK] Missing level:', this.levelKey); return; }
+    if (!this.levelData) return;
     const ld = this.levelData;
 
     this._audio    = window.RK._audio || new RK.AudioManager();
@@ -33,17 +32,18 @@ class GameScene extends Phaser.Scene {
     this.platformGroup   = this.physics.add.staticGroup();
     this.ceilingGroup    = this.physics.add.staticGroup();
     this.thornGroup      = this.physics.add.staticGroup();
+    this.wallGroup       = this.physics.add.staticGroup();
     this.enemyGroup      = this.add.group();
     this.pickupGroup     = this.add.group();
     this.coconutGroup    = this.add.group();
     this.checkpointGroup = [];
 
-    this._buildPlatforms(ld);
-    this._buildThorns(ld);
-    this._buildEnemies(ld);
-    this._buildPickups(ld);
-    this._buildCheckpoints(ld);
-    this._buildExit(ld);
+    RK.GameSceneBuilder.buildPlatforms(this, ld);
+    RK.GameSceneBuilder.buildThorns(this, ld);
+    RK.GameSceneBuilder.buildEnemies(this, ld);
+    RK.GameSceneBuilder.buildPickups(this, ld);
+    RK.GameSceneBuilder.buildCheckpoints(this, ld);
+    RK.GameSceneBuilder.buildExit(this, ld);
 
     this._gameFeel = new RK.GameFeel(this);
 
@@ -57,7 +57,6 @@ class GameScene extends Phaser.Scene {
 
     const loopKey = (ld.loopKey || 'backing_loop');
     this._rhythmClock = new RK.RhythmClock(this._audio, this.game.events, loopKey);
-    // Start immediately — user already gave a gesture (Space on menu)
     this._audio._ensureCtx();
     this._rhythmClock.start();
 
@@ -74,143 +73,68 @@ class GameScene extends Phaser.Scene {
   // ---------------------------------------------------------------------------
 
   _buildParallax(levelW) {
-    // Layer 0: far canopy (tileSprite, scrollFactor=0, updated in update)
-    this._bg0 = this.add.tileSprite(0, 0, RK.WIDTH, 300, 'bg_canopy')
-      .setOrigin(0, 0).setScrollFactor(0).setDepth(-10);
+    const layers = [
+      { key: 'plx_1', factor: 0.05, depth: -12 },
+      { key: 'plx_2', factor: 0.12, depth: -11 },
+      { key: 'plx_3', factor: 0.22, depth: -10 },
+      { key: 'plx_4', factor: 0.38, depth: -9  },
+      { key: 'plx_5', factor: 0.55, depth: -8  },
+    ];
+    this._plxSprites = [];
+    this._plxFactors = [];
 
-    // Layer 1: mid ruins (graphics, scrollFactor=0.3)
+    const hasPlx = this.textures.exists('plx_1');
+
+    if (hasPlx) {
+      layers.forEach(({ key, factor, depth }) => {
+        // Check individual key existence — fall through to procedural if any missing
+        if (!this.textures.exists(key)) return;
+        const spr = this.add.tileSprite(0, 0, RK.WIDTH, RK.PLAY_HEIGHT, key)
+          .setOrigin(0, 0).setScrollFactor(0).setDepth(depth);
+        this._plxSprites.push(spr);
+        this._plxFactors.push(factor);
+      });
+    }
+
+    // Fallback: procedural canopy if real assets didn't load
+    if (this._plxSprites.length === 0) {
+      this._buildProceduralBg(levelW);
+    }
+
+    // Scatter hanging vine decorations along level (world space, scrolls with level)
+    if (this.textures.exists('vine_hang')) {
+      [150, 380, 650, 950, 1300, 1650, 2000, 2400, 2800, 3100].forEach(vx => {
+        this.add.image(vx, 0, 'vine_hang')
+          .setOrigin(0.5, 0).setDepth(-7).setScrollFactor(1).setScale(1.5);
+      });
+    }
+
+    // Ambient mist at bottom of play area
+    this.add.rectangle(0, RK.PLAY_HEIGHT - 30, levelW * 2, 60, RK.COLORS.BG, 0.5)
+      .setOrigin(0, 0).setDepth(-5);
+  }
+
+  _buildProceduralBg(levelW) {
+    const g = this.add.graphics().setDepth(-10).setScrollFactor(0);
+    g.fillStyle(0x020d06); g.fillRect(0, 0, RK.WIDTH, RK.PLAY_HEIGHT);
+
     const gMid = this.add.graphics().setDepth(-8).setScrollFactor(0.3);
     gMid.fillStyle(0x0d2e1a);
-    const colPositions = [60, 160, 280, 420, 560, 700, 860, 1020, 1180, 1340, 1500];
-    colPositions.forEach(cx => {
+    [60, 160, 280, 420, 560, 700, 860, 1020, 1180, 1340, 1500].forEach(cx => {
       const h = 120 + Math.floor(Math.random() * 80);
       gMid.fillRect(cx, RK.PLAY_HEIGHT - h, 18, h);
-      gMid.fillStyle(0x142e1a); gMid.fillRect(cx - 4, RK.PLAY_HEIGHT - h, 26, 8);
-      gMid.fillStyle(0x0d2e1a);
     });
 
-    // Layer 2: near foreground vines (scrollFactor=0.7)
     const gNear = this.add.graphics().setDepth(-6).setScrollFactor(0.7);
     gNear.fillStyle(0x0a2010, 0.6);
     [0, 200, 450, 700, 950, 1200, 1500, 1800, 2100].forEach(vx => {
       gNear.fillRect(vx, 0, 8, 80 + Math.floor(Math.random() * 60));
-      gNear.fillRect(vx + 4, 0, 3, 50 + Math.floor(Math.random() * 40));
     });
-
-    // Ambient mist at bottom of play area
-    const mist = this.add.rectangle(0, RK.PLAY_HEIGHT - 30, levelW * 2, 60, RK.COLORS.BG, 0.5)
-      .setOrigin(0, 0).setDepth(-5);
   }
 
   // ---------------------------------------------------------------------------
-  //  LEVEL BUILDING
+  //  HUD
   // ---------------------------------------------------------------------------
-
-  _buildPlatforms(ld) {
-    ld.platforms.forEach(p => {
-      const w = p.w, h = 20, gfx = this.add.graphics().setDepth(1);
-      if (p.type === 'ceiling') {
-        // Invisible ceiling (just visual stone overhang)
-        gfx.fillStyle(0x2a2015); gfx.fillRect(p.x, p.y, w, h);
-        gfx.fillStyle(0x1a1408); gfx.fillRect(p.x, p.y + h - 4, w, 4);
-        // Root detail hanging down
-        gfx.fillStyle(0x1a4020); gfx.fillRect(p.x + 10, p.y + h, 4, 20);
-        gfx.fillRect(p.x + 30, p.y + h, 3, 14); gfx.fillRect(p.x + 60, p.y + h, 5, 18);
-        const body = this.ceilingGroup.create(p.x + w / 2, p.y + h / 2, 'px');
-        body.setDisplaySize(w, h).setAlpha(0).refreshBody();
-        return;
-      }
-      // Jungle platform: moss top + carved stone base
-      gfx.fillStyle(0x1a4a22); gfx.fillRect(p.x, p.y, w, 6);
-      gfx.fillStyle(0x228833); gfx.fillRect(p.x + 1, p.y + 1, w - 2, 3);
-      gfx.fillStyle(0x33aa44); gfx.fillRect(p.x + 2, p.y + 1, w - 4, 1);
-      gfx.fillStyle(0x3a2e1a); gfx.fillRect(p.x, p.y + 6, w, h - 6);
-      gfx.fillStyle(0x4a3c26); gfx.fillRect(p.x + 1, p.y + 7, w - 2, 4);
-      gfx.fillStyle(0x2a2015); gfx.fillRect(p.x, p.y + h - 3, w, 3);
-      // Gold rune marks
-      gfx.fillStyle(0xcc9933, 0.5);
-      for (let rx = p.x + 20; rx < p.x + w - 10; rx += 32) {
-        gfx.fillRect(rx, p.y + 9, 8, 2);
-      }
-      // Physics body
-      const body = this.platformGroup.create(p.x + w / 2, p.y + h / 2, 'px');
-      body.setDisplaySize(w, h).setAlpha(0).refreshBody();
-    });
-  }
-
-  _buildThorns(ld) {
-    const thorns = ld.thorns || ld.spikes || [];
-    thorns.forEach(s => {
-      const gfx = this.add.graphics().setDepth(1);
-      gfx.fillStyle(0x1a5c18); gfx.fillTriangle(s.x + 8, s.y, s.x, s.y + 20, s.x + 16, s.y + 20);
-      gfx.fillStyle(0x228822); gfx.fillTriangle(s.x + 8, s.y + 3, s.x + 2, s.y + 20, s.x + 14, s.y + 20);
-      gfx.fillStyle(0x44cc44); gfx.fillRect(s.x + 7, s.y + 3, 2, 5);
-      const body = this.thornGroup.create(s.x + 8, s.y + 10, 'px');
-      body.setDisplaySize(12, 16).setAlpha(0).refreshBody();
-    });
-  }
-
-  _buildEnemies(ld) {
-    (ld.enemies || []).forEach(e => {
-      const enemy = new RK.Enemy(this, e.x, e.y, e.type);
-      const patrol = e.patrol || [e.x - 64, e.x + 64];
-      enemy.setPatrol(patrol[0], patrol[1]);
-      this.enemyGroup.add(enemy);
-    });
-  }
-
-  _buildPickups(ld) {
-    (ld.pickups || []).forEach(p => {
-      const sprite = this.physics.add.sprite(p.x, p.y, 'relic_shard');
-      sprite.body.setAllowGravity(false);
-      sprite.body.setImmovable(true);
-      sprite.setDepth(3);
-      sprite.setData('unlocks', p.unlocks);
-      // Color tint per unlocked action
-      const tints = { COCONUT: 0xddaa22, PUNCH: 0xff4433 };
-      if (tints[p.unlocks]) sprite.setTint(tints[p.unlocks]);
-      this.tweens.add({
-        targets: sprite, y: p.y - 8, angle: 360,
-        duration: 1200, ease: 'Sine.easeInOut', yoyo: true, repeat: -1,
-      });
-      this.pickupGroup.add(sprite);
-    });
-  }
-
-  _buildCheckpoints(ld) {
-    (ld.checkpoints || []).forEach((cp, i) => {
-      const gfx = this.add.graphics().setDepth(2);
-      gfx.fillStyle(0x4a4035); gfx.fillRect(cp.x, cp.y, 24, 40);
-      gfx.fillStyle(0x44ffaa); gfx.fillRect(cp.x + 10, cp.y + 8, 4, 24);
-      gfx.fillRect(cp.x + 8, cp.y + 8, 8, 4);
-      gfx.fillRect(cp.x + 8, cp.y + 20, 8, 4);
-      const zone = this.physics.add.sprite(cp.x + 12, cp.y + 20, 'px');
-      zone.setAlpha(0);
-      if (zone.body) {
-        zone.body.setSize(24, 40).setAllowGravity(false);
-      }
-      zone.setData('cpIndex', i);
-      zone.setData('cpX', cp.x + 12);
-      zone.setData('cpY', cp.y);
-      this.checkpointGroup.push(zone);
-    });
-  }
-
-  _buildExit(ld) {
-    const ex = ld.exit;
-    this.add.image(ex.x + 24, ex.y - 28, 'exit_arch').setDepth(2);
-    this.tweens.add({
-      targets: this.add.rectangle(ex.x + 24, ex.y - 8, 24, 48, RK.COLORS.JADE, 0.2)
-        .setDepth(2),
-      alpha: { from: 0.1, to: 0.5 },
-      duration: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
-    });
-    this.exitZone = this.physics.add.sprite(ex.x + 24, ex.y - 8, 'px');
-    this.exitZone.setAlpha(0);
-    if (this.exitZone.body) {
-      this.exitZone.body.setSize(30, 60).setAllowGravity(false);
-    }
-  }
 
   _buildHUD(ld) {
     const style = { fontSize: '9px', color: '#44ffaa', fontFamily: 'monospace',
@@ -227,7 +151,7 @@ class GameScene extends Phaser.Scene {
       });
     }
 
-    this.add.text(6, RK.PLAY_HEIGHT - 12, 'A/D move  SPACE edit/play', {
+    this.add.text(6, RK.PLAY_HEIGHT - 12, 'A/D  move', {
       fontSize: '8px', color: '#334444', fontFamily: 'monospace',
     }).setDepth(10).setScrollFactor(0);
   }
@@ -239,6 +163,7 @@ class GameScene extends Phaser.Scene {
   _setupCollisions() {
     this.physics.add.collider(this.player, this.platformGroup);
     this.physics.add.collider(this.player, this.ceilingGroup);
+    this.physics.add.collider(this.player, this.wallGroup);
     this.physics.add.collider(this.enemyGroup, this.platformGroup);
     this.physics.add.collider(this.coconutGroup, this.platformGroup, (c) => { if (c.alive) c.die(); });
 
@@ -254,8 +179,6 @@ class GameScene extends Phaser.Scene {
   }
 
   _setupCamera() {
-    const ld = this.levelData;
-    const levelW = ld.width || RK.WIDTH;
     this.cameras.main.startFollow(this.player, true, 0.08, 0.08);
     this.cameras.main.setFollowOffset(0, 40);
   }
@@ -266,7 +189,6 @@ class GameScene extends Phaser.Scene {
 
   _bindEvents() {
     this.game.events.on('rk_beat',          this._onBeat,          this);
-    this.game.events.on('rk_mode_change',   this._onModeChange,    this);
     this.game.events.on('rk_spawn_coconut', this._onSpawnCoconut,  this);
     this.game.events.on('rk_player_punch',  this._onPlayerPunch,   this);
     this.game.events.on('rk_player_land',   this._onPlayerLand,    this);
@@ -283,21 +205,24 @@ class GameScene extends Phaser.Scene {
   update(time, delta) {
     if (!this.player) return;
 
-    // Parallax far layer update
-    if (this._bg0) this._bg0.tilePositionX = this.cameras.main.scrollX * 0.08;
+    // Parallax scroll update
+    if (this._plxSprites && this._plxSprites.length > 0) {
+      const sx = this.cameras.main.scrollX;
+      this._plxSprites.forEach((spr, i) => {
+        spr.tilePositionX = sx * this._plxFactors[i];
+      });
+    }
 
-    if (this.mode === 'play' && !this.player.dead) {
+    if (!this.player.dead) {
       this.player.update(delta, this.cursors);
       this.enemyGroup.getChildren().forEach(e => { if (e.alive) e.update(delta); });
       this.coconutGroup.getChildren().slice().forEach(c => { if (c.alive) c.update(); });
 
-      // Camera lead
       if (this.player.body) {
         const dir = this.player.facingRight ? 1 : -1;
         this._gameFeel.setCameraLead(dir);
       }
 
-      // Fall death
       if (this.player.y > RK.PLAY_HEIGHT + 80) this.player.die();
     }
   }
@@ -311,30 +236,27 @@ class GameScene extends Phaser.Scene {
 
     this._gameFeel.beatPulse(beatIndex === 0);
 
-    // Random ambient jungle sounds
-    if (Math.random() < 0.08) {
-      const ambient = ['chatter', 'hoot', 'monkey', 'bird', 'thunder'][Math.floor(Math.random() * 5)];
-      this._audio.play(ambient, 0.35);
+    // Ambient jungle sounds — time-based cooldown (was broken: used beatIndex 0-3 vs >=8)
+    const now = this.time.now;
+    if (now - (this._lastAmbientTime || 0) > (this._nextAmbientDelay || 5000)) {
+      const sounds = ['chatter', 'hoot', 'monkey', 'bird', 'thunder'];
+      this._audio.play(sounds[Math.floor(Math.random() * sounds.length)], 0.35);
+      this._lastAmbientTime = now;
+      this._nextAmbientDelay = Phaser.Math.Between(6000, 14000);
     }
 
     const action = this.timeline.getSlot(beatIndex);
     if (!action) return;
 
     if (!this.player.isActionUnlocked(action)) {
-      if (this.mode === 'play') {
-        this._audio.play('invalid_beat', 0.4);
-        this.game.events.emit('rk_slot_invalid', beatIndex);
-      }
+      this._audio.play('invalid_beat', 0.4);
+      this.game.events.emit('rk_slot_invalid', beatIndex);
       return;
     }
 
-    // SFX plays in both edit + play mode — composition feel
     const SFX = { JUMP: 'jump', ROLL: 'roll', COCONUT: 'coconut_throw', PUNCH: 'punch' };
     this._audio.play(SFX[action], 1.0);
     this.game.events.emit('rk_slot_success', beatIndex);
-
-    // Gameplay actions only execute in play mode
-    if (this.mode !== 'play') return;
 
     switch (action) {
       case 'JUMP':    this.player.doJump();    break;
@@ -342,10 +264,6 @@ class GameScene extends Phaser.Scene {
       case 'COCONUT': this.player.doCoconut(); break;
       case 'PUNCH':   this.player.doPunch();   break;
     }
-  }
-
-  _onModeChange(data) {
-    this.mode = data.mode;
   }
 
   _onLoopChange(data) {
@@ -362,7 +280,6 @@ class GameScene extends Phaser.Scene {
   }
 
   _onPlayerPunch(data) {
-    // Check for enemies in punch range
     let hit = false;
     this.enemyGroup.getChildren().forEach(e => {
       if (!e.alive) return;
@@ -379,13 +296,8 @@ class GameScene extends Phaser.Scene {
     }
   }
 
-  _onPlayerLand(data) {
-    this._gameFeel.dustBurst(data.x, data.y + 14);
-  }
-
-  _onPlayerRoll(data) {
-    this._gameFeel.rollTrail(data.x, data.y);
-  }
+  _onPlayerLand(data) { this._gameFeel.dustBurst(data.x, data.y + 14); }
+  _onPlayerRoll(data) { this._gameFeel.rollTrail(data.x, data.y); }
 
   _onPlayerHit() {
     this._audio.play('hit', 0.7);
@@ -398,14 +310,12 @@ class GameScene extends Phaser.Scene {
     if (this._rhythmClock) this._rhythmClock.stop();
 
     if (this._checkpointX !== null) {
-      // Respawn at checkpoint
       this.time.delayedCall(600, () => {
         this.player.revive(this._checkpointX, this._checkpointY - 40);
         this.timeline.clearAll();
-        this.game.events.emit('rk_mode_change', { mode: 'edit' });
+        this._rhythmClock.start();
       });
     } else {
-      // Full restart
       this.add.text(RK.WIDTH / 2, RK.PLAY_HEIGHT / 2, 'Gone…', {
         fontSize: '28px', color: '#ff4444', fontFamily: 'monospace',
         stroke: '#660000', strokeThickness: 4,
@@ -419,17 +329,16 @@ class GameScene extends Phaser.Scene {
   }
 
   // ---------------------------------------------------------------------------
-  //  COLLISIONS
+  //  COLLISION HANDLERS
   // ---------------------------------------------------------------------------
 
   _playerHitThorn() {
-    if (this.player.isRolling) return; // rolling is safe
+    if (this.player.isRolling) return;
     this.player.takeDamage();
   }
 
   _playerHitEnemy(enemy) {
     if (!enemy || !enemy.alive || this.player.invincible || this.player.dead) return;
-    // Rolling through lizard = kill
     if (this.player.isRolling && enemy.canRoll()) {
       enemy.die();
       this._gameFeel.dustBurst(enemy.x, enemy.y);
@@ -468,11 +377,10 @@ class GameScene extends Phaser.Scene {
   _triggerCheckpoint(zone) {
     const cpX = zone.getData('cpX');
     const cpY = zone.getData('cpY');
-    if (cpX === this._checkpointX) return; // already activated
+    if (cpX === this._checkpointX) return;
     this._checkpointX = cpX;
     this._checkpointY = cpY;
     this._audio.play('checkpoint', 0.7);
-    // Glow flash at checkpoint
     const flash = this.add.rectangle(cpX, cpY, 60, 100, RK.COLORS.JADE, 0.5).setDepth(5);
     this.tweens.add({ targets: flash, alpha: 0, duration: 600, onComplete: () => flash.destroy() });
   }
@@ -529,12 +437,12 @@ class GameScene extends Phaser.Scene {
   shutdown() {
     if (this._rhythmClock) this._rhythmClock.stop();
     this.game.events.off('rk_beat',          this._onBeat,          this);
-    this.game.events.off('rk_mode_change',   this._onModeChange,    this);
     this.game.events.off('rk_spawn_coconut', this._onSpawnCoconut,  this);
     this.game.events.off('rk_player_punch',  this._onPlayerPunch,   this);
     this.game.events.off('rk_player_land',   this._onPlayerLand,    this);
     this.game.events.off('rk_player_roll',   this._onPlayerRoll,    this);
     this.game.events.off('rk_player_hit',    this._onPlayerHit,     this);
     this.game.events.off('rk_player_dead',   this._onPlayerDead,    this);
+    this.game.events.off('rk_loop_change',   this._onLoopChange,    this);
   }
 }

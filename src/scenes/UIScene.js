@@ -1,7 +1,6 @@
 // =============================================================================
 //  Rhythm Kingdom — UIScene.js
-//  Relic sequencer overlay. Listens to rk_beat from RhythmClock.
-//  Click beat wells to cycle actions. Space = toggle play/edit.
+//  Relic sequencer overlay. Click beat wells to cycle actions.
 // =============================================================================
 
 class UIScene extends Phaser.Scene {
@@ -10,28 +9,25 @@ class UIScene extends Phaser.Scene {
   init(data) {
     this.timeline    = (data && data.timeline) || new RK.Timeline();
     this.currentBeat = 0;
-    this.mode        = 'edit';
     this._unlockedActions = ['JUMP', 'ROLL'];
   }
 
   create() {
-    this.PANEL_TOP = 0;   // UI bar at TOP
+    this.PANEL_TOP = 0;
     this.WELL_W    = 72;
     this.WELL_H    = 56;
     this.WELL_GAP  = 8;
 
     const totalW     = RK.BEAT_COUNT * this.WELL_W + (RK.BEAT_COUNT - 1) * this.WELL_GAP;
     this.wellStartX  = (RK.WIDTH - totalW) / 2;
-    this.WELL_CY     = 50;
+    this.WELL_CY     = 35;
 
     this._buildPanel();
     this._buildWells();
     this._buildPlayhead();
-    this._buildModeBadge();
     this._buildUnlockIndicator();
     this._buildMusicSelector();
 
-    this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     this.input.on('pointerdown', this._onPointerDown, this);
 
     this.game.events.on('rk_beat',          this._onBeat,          this);
@@ -39,7 +35,6 @@ class UIScene extends Phaser.Scene {
     this.game.events.on('rk_level_complete',this._onLevelComplete,  this);
     this.game.events.on('rk_slot_success',  this._onSlotSuccess,   this);
     this.game.events.on('rk_slot_invalid',  this._onSlotInvalid,   this);
-    this.game.events.on('rk_mode_change',   this._onModeChange,    this);
     this.game.events.on('rk_action_unlock', this._onActionUnlock,  this);
   }
 
@@ -50,7 +45,6 @@ class UIScene extends Phaser.Scene {
 
   // ---------------------------------------------------------------------------
   _buildPanel() {
-    // Thin top bar
     this.add.rectangle(RK.WIDTH / 2, RK.UI_HEIGHT / 2, RK.WIDTH, RK.UI_HEIGHT, 0x1a140e, 0.95)
       .setDepth(0).setScrollFactor(0);
     this.add.rectangle(RK.WIDTH / 2, 0, RK.WIDTH, 2, 0xcc9933)
@@ -62,6 +56,7 @@ class UIScene extends Phaser.Scene {
     this.wellIcons  = [];
     this.wellGlows  = [];
     this.beatNums   = [];
+    this.wellLabels = [];
 
     for (let i = 0; i < RK.BEAT_COUNT; i++) {
       const cx = this._wellX(i);
@@ -69,21 +64,26 @@ class UIScene extends Phaser.Scene {
 
       // Beat number label
       const numStyle = { fontSize: '11px', color: '#cc9933', fontFamily: 'monospace', fontStyle: 'bold' };
-      const num = this.add.text(cx, cy - 44, String(i + 1), numStyle).setOrigin(0.5).setDepth(2);
+      const num = this.add.text(cx, cy - 25, String(i + 1), numStyle).setOrigin(0.5).setDepth(2);
       this.beatNums.push(num);
 
       // Stone well base
-      const bg = this.add.image(cx, cy, 'beat_well').setDepth(1);
+      const bg = this.add.image(cx, cy, 'beat_well').setDepth(1).setScale(0.72);
       this.wellBgs.push(bg);
 
-      // Glow overlay (initially invisible)
+      // Glow overlay
       const glow = this.add.rectangle(cx, cy, this.WELL_W - 16, this.WELL_H - 16, 0x44ffaa, 0)
         .setDepth(2);
       this.wellGlows.push(glow);
 
-      // Action icon (initially hidden)
-      const icon = this.add.image(cx, cy, 'action_jump').setDepth(3).setAlpha(0).setScale(0.9);
+      // Action icon
+      const icon = this.add.image(cx, cy, 'action_jump').setDepth(3).setAlpha(0).setScale(0.65);
       this.wellIcons.push(icon);
+
+      // Action name label beneath icon
+      const lblStyle = { fontSize: '7px', color: '#cc9933', fontFamily: 'monospace' };
+      const lbl = this.add.text(cx, cy + 20, '', lblStyle).setOrigin(0.5).setDepth(3);
+      this.wellLabels.push(lbl);
 
       // Click interaction
       bg.setInteractive({ useHandCursor: true });
@@ -97,65 +97,52 @@ class UIScene extends Phaser.Scene {
 
   _buildPlayhead() {
     this._playhead = this.add.image(this._wellX(0), this.WELL_CY, 'playhead')
-      .setDepth(4).setAlpha(0.9);
-  }
-
-  _buildModeBadge() {
-    const bx = RK.WIDTH - 70;
-    const by = this.PANEL_TOP + 20;
-    this._modeBg = this.add.rectangle(bx, by, 110, 24, 0xffcc00)
-      .setDepth(5).setStrokeStyle(2, 0xaa8800);
-    this._modeTxt = this.add.text(bx, by, 'EDIT', {
-      fontSize: '11px', fontStyle: 'bold', color: '#000000', fontFamily: 'monospace',
-    }).setOrigin(0.5).setDepth(6);
-    this.add.text(bx, by + 17, 'SPACE', {
-      fontSize: '9px', color: '#887744', fontFamily: 'monospace',
-    }).setOrigin(0.5).setDepth(6);
+      .setDepth(4).setAlpha(0.9).setScale(0.7);
   }
 
   _buildUnlockIndicator() {
-    this._unlockTxt = this.add.text(12, this.PANEL_TOP + 12, '', {
-      fontSize: '9px', color: '#44ffaa', fontFamily: 'monospace',
+    this._unlockTxt = this.add.text(8, 8, '', {
+      fontSize: '8px', color: '#44ffaa', fontFamily: 'monospace',
     }).setDepth(5);
     this._refreshUnlockDisplay();
   }
 
   _buildMusicSelector() {
     const tracks = [
-      { key: 'backing_loop_chill',   label: 'CHILL',  color: 0x44ffaa },
-      { key: 'backing_loop',         label: 'GROOVE', color: 0xffcc44 },
+      { key: 'backing_loop_chill',   label: 'CHILL',   color: 0x44ffaa },
+      { key: 'backing_loop',         label: 'GROOVE',  color: 0xffcc44 },
       { key: 'backing_loop_intense', label: 'INTENSE', color: 0xff4422 },
     ];
     this._tracks = tracks;
     this._trackIndex = 1;
 
-    // Gear button — left side of panel, below mode badge
-    const bx = 22;
-    const by = this.PANEL_TOP + 22;
+    // Gear button — RIGHT side of panel
+    const bx = RK.WIDTH - 22;
+    const by = 30;
     this._gearBtn = this.add.rectangle(bx, by, 18, 18, 0x2a2015)
       .setDepth(5).setStrokeStyle(1, 0xcc9933).setScrollFactor(0).setInteractive({ useHandCursor: true });
     this._gearBtn.on('pointerdown', (p) => p.event.stopPropagation());
     this._gearBtn.on('pointerup', () => this._toggleTrackPicker());
 
-    // Gear icon — 6 dots around a center
+    // Gear icon — 6 dots around center
     const gl = this.add.graphics().setDepth(6).setScrollFactor(0);
     gl.fillStyle(0xcc9933);
     for (let i = 0; i < 6; i++) {
       const a = (i / 6) * Math.PI * 2 - Math.PI / 2;
-      const r = 6;
-      gl.fillCircle(bx + Math.cos(a) * r, by + Math.sin(a) * r, 1.8);
+      gl.fillCircle(bx + Math.cos(a) * 6, by + Math.sin(a) * 6, 1.8);
     }
     gl.fillCircle(bx, by, 2.5);
 
-    // Track picker — inside UI panel, below wells
-    const PY = this.PANEL_TOP;
-    this._pickerBg = this.add.rectangle(RK.WIDTH / 2, PY + 48, 300, 55, 0x1a140e, 0.95)
+    // Track picker — pops below gear button, right-aligned
+    const pickerX = RK.WIDTH - 162;
+    const pickerY = RK.UI_HEIGHT + 40;
+    this._pickerBg = this.add.rectangle(pickerX, pickerY, 300, 55, 0x1a140e, 0.95)
       .setDepth(20).setAlpha(0).setStrokeStyle(2, 0xcc9933).setScrollFactor(0);
 
     this._pickerBtns = tracks.map((t, i) => {
-      const px = 80 + i * 110;
-      const py = PY + 48;
-      const btn = this.add.rectangle(px, py, 100, 30, t.color, 0.15)
+      const px = (RK.WIDTH - 280) + i * 100;
+      const py = pickerY;
+      const btn = this.add.rectangle(px, py, 90, 30, t.color, 0.15)
         .setDepth(21).setAlpha(0).setScrollFactor(0).setInteractive({ useHandCursor: true })
         .setStrokeStyle(1, t.color);
       btn.on('pointerdown', (p) => p.event.stopPropagation());
@@ -199,15 +186,18 @@ class UIScene extends Phaser.Scene {
       const action = this.timeline.getSlot(i);
       const icon   = this.wellIcons[i];
       const glow   = this.wellGlows[i];
+      const lbl    = this.wellLabels[i];
 
       if (action) {
         const iconKey = 'action_' + action.toLowerCase();
         icon.setTexture(iconKey).setAlpha(1);
         const col = RK.ACTION_COLORS[action] || 0x888888;
         glow.setFillStyle(col, 0.18);
+        lbl.setText(action);
       } else {
         icon.setAlpha(0);
         glow.setFillStyle(0x44ffaa, 0);
+        lbl.setText('');
       }
     }
   }
@@ -216,7 +206,6 @@ class UIScene extends Phaser.Scene {
   _onWellClick(index) {
     this.timeline.cycleSlot(index);
     this._updateWellVisuals();
-    // Feedback pulse
     const glow = this.wellGlows[index];
     this.tweens.add({
       targets: glow, fillAlpha: 0.5, duration: 80, yoyo: true,
@@ -229,7 +218,7 @@ class UIScene extends Phaser.Scene {
       let inside = false;
       const px = pointer.x, py = pointer.y;
       this._pickerBtns.forEach(({ btn }) => {
-        const bx = btn.x - 50, ex = btn.x + 50;
+        const bx = btn.x - 45, ex = btn.x + 45;
         const by = btn.y - 15, ey = btn.y + 15;
         if (px >= bx && px <= ex && py >= by && py <= ey) inside = true;
       });
@@ -270,7 +259,7 @@ class UIScene extends Phaser.Scene {
   _pulseWell(i) {
     const bg = this.wellBgs[i];
     this.tweens.add({
-      targets: bg, scaleX: 1.08, scaleY: 1.08,
+      targets: bg, scaleX: 0.78, scaleY: 0.78,
       duration: 80, yoyo: true, ease: 'Sine.easeOut',
     });
   }
@@ -315,11 +304,6 @@ class UIScene extends Phaser.Scene {
   }
 
   // ---------------------------------------------------------------------------
-  _onModeChange(data) {
-    this.mode = data.mode;
-    this._updateModeBadge();
-  }
-
   _onActionUnlock(data) {
     if (data && data.action && !this._unlockedActions.includes(data.action)) {
       this._unlockedActions.push(data.action);
@@ -329,46 +313,21 @@ class UIScene extends Phaser.Scene {
   }
 
   _onPlayerDead() {
-    this.mode = 'edit';
-    this._updateModeBadge();
-    // Reset playhead to beat 0
     this._movePlayhead(0);
     this.currentBeat = 0;
   }
 
   _onLevelComplete() {
-    this.mode = 'edit';
-    this._updateModeBadge();
-  }
-
-  _updateModeBadge() {
-    if (this.mode === 'play') {
-      this._modeBg.setFillStyle(0x33bb44).setStrokeStyle(2, 0x228833);
-      this._modeTxt.setText('▶ PLAY').setStyle({ color: '#ffffff' });
-    } else {
-      this._modeBg.setFillStyle(0xffcc00).setStrokeStyle(2, 0xaa8800);
-      this._modeTxt.setText('✏ EDIT').setStyle({ color: '#000000' });
-    }
+    // no-op — level transition handled by GameScene
   }
 
   // ---------------------------------------------------------------------------
-  _toggleMode() {
-    this.mode = this.mode === 'edit' ? 'play' : 'edit';
-    this._updateModeBadge();
-    this.game.events.emit('rk_mode_change', { mode: this.mode });
-  }
-
-  update() {
-    if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) this._toggleMode();
-  }
-
   shutdown() {
     this.game.events.off('rk_beat',          this._onBeat,          this);
     this.game.events.off('rk_player_dead',   this._onPlayerDead,    this);
     this.game.events.off('rk_level_complete',this._onLevelComplete,  this);
     this.game.events.off('rk_slot_success',  this._onSlotSuccess,   this);
     this.game.events.off('rk_slot_invalid',  this._onSlotInvalid,   this);
-    this.game.events.off('rk_mode_change',   this._onModeChange,    this);
     this.game.events.off('rk_action_unlock', this._onActionUnlock,  this);
   }
 }

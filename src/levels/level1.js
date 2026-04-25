@@ -14,27 +14,33 @@ window.RK.Levels.level1 = {
   unlockedActions: ['JUMP', 'ROLL'],
 
   platforms: [
-    // Section 1: Open jungle path
-    { x: 0,    y: 498, w: 400,  type: 'jungle' },
-    { x: 480,  y: 498, w: 160,  type: 'jungle' },
-    { x: 720,  y: 498, w: 200,  type: 'jungle' },
+    // Section 1: Open jungle path (continuous)
+    { x: 0,    y: 498, w: 960,  type: 'jungle' },
 
-    // Section 2: Rhythm practice — spaced platforms
-    { x: 1000, y: 468, w: 100,  type: 'jungle' },
-    { x: 1180, y: 468, w: 100,  type: 'jungle' },
-    { x: 1360, y: 468, w: 100,  type: 'jungle' },
+    // Section 2: Rhythm practice — spaced platforms (intentional gaps — jump over)
+    // Section 2: Rhythm practice — spaced platforms (intentional gaps — jump over)
+    { x: 1000, y: 498, w: 80,  type: 'jungle' },
+    { x: 1120, y: 498, w: 120,  type: 'jungle' },
+    { x: 1300, y: 498, w: 120,  type: 'jungle' },
+    { x: 1480, y: 498, w: 120,  type: 'jungle' },
 
-    // Section 3: Root cavern — low ceiling forces rolling
-    { x: 1520, y: 498, w: 500,  type: 'jungle' },
-    { x: 1540, y: 408, w: 440,  type: 'ceiling' },
+    // Section 3: Root Gate — stone wall with small gate, must roll to pass
+    { x: 1460, y: 498, w: 740,  type: 'jungle' },
 
-    // Section 4: "Collapsing bridge" — 3 narrow platforms
-    { x: 2100, y: 498, w: 80,   type: 'jungle' },
-    { x: 2250, y: 498, w: 80,   type: 'jungle' },
-    { x: 2400, y: 498, w: 80,   type: 'jungle' },
+    // Stone wall with gate at floor level (roll to open)
+    { x: 1980, y: 498, w: 200,  type: 'gate' },
 
-    // Section 5: Post-checkpoint run to exit
-    { x: 2560, y: 498, w: 640,  type: 'jungle' },
+    // Low ceiling tunnel — blocks jumping, forces roll through the gate
+    // Standing body top = 462, ceiling bottom = 460 → jump blocked; roll body top = 480 → clears
+    { x: 1700, y: 440, w: 580,  type: 'ceiling' },
+
+    // Section 4: "Collapsing bridge" — 3 narrow platforms (intentional gaps)
+    { x: 2180, y: 498, w: 140,   type: 'jungle' },
+    { x: 2380, y: 498, w: 140,   type: 'jungle' },
+    { x: 2580, y: 498, w: 140,   type: 'jungle' },
+
+    // Section 5: Post-checkpoint run to exit (continuous)
+    { x: 2720, y: 498, w: 480,  type: 'jungle' },
   ],
 
   thorns: [

@@ -6,7 +6,7 @@
 window.RK.Player = class Player extends Phaser.Physics.Arcade.Sprite {
 
   constructor(scene, x, y) {
-    super(scene, x, y, 'gorilla_idle');
+    super(scene, x, y, 'dance_monk_idle');
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
@@ -20,15 +20,28 @@ window.RK.Player = class Player extends Phaser.Physics.Arcade.Sprite {
     this.invincibleTimer = 0;
     this.dead = false;
     this._lastGrounded = false;
+    this._danceTimer = 0;
+    this._danceFrameIdx = 0;
 
     this.body.setCollideWorldBounds(true);
-    this.body.setSize(RK.PLAYER_W, RK.PLAYER_H);
-    this.body.setOffset((28 - RK.PLAYER_W) / 2, 36 - RK.PLAYER_H);
+    this.body.setSize(28, 36);
+    this.body.setOffset(6, 4);
     this.setDepth(5);
   }
 
   update(delta, cursors) {
     if (this.dead) return;
+
+    // Constant dance — cycle frames every 300ms regardless of movement
+    if (!this.isRolling && !this.invincible) {
+      this._danceTimer += delta;
+      if (this._danceTimer >= 200) {
+        this._danceTimer = 0;
+        this._danceFrameIdx = (this._danceFrameIdx + 1) % 4;
+        const frames = ['dance_monk_idle', 'dance_monk_l', 'dance_monk_idle', 'dance_monk_r'];
+        this.setTexture(frames[this._danceFrameIdx]);
+      }
+    }
 
     // Invincibility flash
     if (this.invincible) {
@@ -66,17 +79,6 @@ window.RK.Player = class Player extends Phaser.Physics.Arcade.Sprite {
     } else {
       this.body.setVelocityX(this.body.velocity.x * 0.8);
     }
-
-    // Running texture
-    if (!this.isRolling && !this.invincible) {
-      if (!grounded) {
-        this.setTexture('gorilla_jump');
-      } else if (Math.abs(this.body.velocity.x) > 30) {
-        this.setTexture('gorilla_run');
-      } else {
-        this.setTexture('gorilla_idle');
-      }
-    }
   }
 
   // --- Actions ---------------------------------------------------------------
@@ -103,8 +105,11 @@ window.RK.Player = class Player extends Phaser.Physics.Arcade.Sprite {
     // Burst in facing direction
     const dir = this.facingRight ? 1 : -1;
     this.body.setVelocityX(dir * RK.PLAYER_SPEED * 1.8);
-    // Horizontal stretch
-    this.setScale(1.4, 0.7);
+    // Spin rotation — looks like a roll instead of a dash
+    this.setScale(0.85, 0.85);
+    this.scene.tweens.add({
+      targets: this, angle: dir * 360, duration: 300, ease: 'Linear',
+    });
     this.scene.game.events.emit('rk_player_roll', { x: this.x, y: this.y });
   }
 
@@ -174,8 +179,8 @@ window.RK.Player = class Player extends Phaser.Physics.Arcade.Sprite {
     this.rollTimer = 0;
     this.body.setAllowGravity(true);
     this.body.setVelocity(0, 0);
-    this.body.setSize(RK.PLAYER_W, RK.PLAYER_H);
-    this.body.setOffset((28 - RK.PLAYER_W) / 2, 36 - RK.PLAYER_H);
+    this.body.setSize(28, 36);
+    this.body.setOffset(6, 4);
     this.setPosition(x, y);
     this.setAlpha(0);
     this.setScale(1, 1);
@@ -195,8 +200,10 @@ window.RK.Player = class Player extends Phaser.Physics.Arcade.Sprite {
 
   _endRoll() {
     this.isRolling = false;
-    this.body.setSize(RK.PLAYER_W, RK.PLAYER_H);
-    this.body.setOffset((28 - RK.PLAYER_W) / 2, 36 - RK.PLAYER_H);
+    this.scene.tweens.killTweensOf(this);
+    this.body.setSize(28, 36);
+    this.body.setOffset(6, 4);
+    this.setAngle(0);
     this.setScale(1, 1);
   }
 };

@@ -126,8 +126,8 @@ class MenuScene extends Phaser.Scene {
     const controls = [
       ['A / D',        'Move the gorilla'],
       ['Click a well', 'Cycle action in beat slot'],
-      ['SPACE',        'Toggle Edit / Play'],
       ['Right-click',  'Clear a slot'],
+      ['Beat fires!',  'Actions execute on rhythm'],
     ];
     controls.forEach(([key, desc], i) => {
       const cy = panelY + 36 + i * 22;
@@ -153,7 +153,7 @@ class MenuScene extends Phaser.Scene {
 
     const startLbl = this.add.text(bx, by, 'START', {
       fontSize: '18px', color: '#44ffaa', fontFamily: 'monospace', fontStyle: 'bold',
-    }).setOrigin(0.5).setDepth(11);
+    }).setOrigin(0.5).setDepth(11).setInteractive({ useHandCursor: true });
     startLbl.on('pointerdown', (p) => p.event.stopPropagation());
     startLbl.on('pointerup', () => this._start());
 
@@ -168,9 +168,11 @@ class MenuScene extends Phaser.Scene {
   }
 
   _start() {
+    console.log('[MenuScene] _start called');
     if (window.RK && window.RK._audio) window.RK._audio._ensureCtx();
     this.cameras.main.flash(200, 20, 100, 40);
     this.time.delayedCall(200, () => {
+      console.log('[MenuScene] starting GameScene');
       this.scene.start('GameScene', { level: 'level1' });
     });
   }
