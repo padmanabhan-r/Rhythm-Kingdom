@@ -41,5 +41,8 @@
     audio: { disableWebAudio: false },
   };
 
-  window.game = new Phaser.Game(config);
+  // Wait for Google Fonts before starting — prevents canvas font fallback on hard refresh
+  document.fonts.ready.then(() => {
+    window.game = new Phaser.Game(config);
+  });
 }());
