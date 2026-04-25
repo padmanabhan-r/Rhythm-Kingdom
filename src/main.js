@@ -41,8 +41,11 @@
     audio: { disableWebAudio: false },
   };
 
-  // Wait for Google Fonts before starting — prevents canvas font fallback on hard refresh
-  document.fonts.ready.then(() => {
+  // Explicitly load fonts before Phaser starts — browser skips unused @font-face otherwise
+  Promise.all([
+    document.fonts.load('700 1em "Cinzel Decorative"'),
+    document.fonts.load('400 1em "Press Start 2P"'),
+  ]).then(() => {
     window.game = new Phaser.Game(config);
   });
 }());

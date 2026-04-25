@@ -70,10 +70,13 @@ window.RK.Player = class Player extends Phaser.Physics.Arcade.Sprite {
 
     // Horizontal movement
     const spd = this.isRolling ? RK.PLAYER_SPEED * 1.6 : RK.PLAYER_SPEED;
-    if (cursors.left.isDown) {
+    const goLeft  = cursors.left.isDown  || cursors.arrowLeft.isDown;
+    const goRight = cursors.right.isDown || cursors.arrowRight.isDown;
+
+    if (goLeft) {
       this.body.setVelocityX(-spd);
       if (!this.isRolling) { this.facingRight = false; this.setFlipX(true); }
-    } else if (cursors.right.isDown) {
+    } else if (goRight) {
       this.body.setVelocityX(spd);
       if (!this.isRolling) { this.facingRight = true; this.setFlipX(false); }
     } else {

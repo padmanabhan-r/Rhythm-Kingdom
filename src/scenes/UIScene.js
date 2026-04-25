@@ -161,6 +161,51 @@ class UIScene extends Phaser.Scene {
     });
   }
 
+  _buildInfoButton(bx, by) {
+    const btn = this.add.rectangle(bx, by, 18, 18, 0x0a1a2a)
+      .setDepth(5).setStrokeStyle(1, 0x44aaff).setScrollFactor(0).setInteractive({ useHandCursor: true });
+    this.add.text(bx, by, 'i', {
+      fontSize: '11px', color: '#44aaff', fontFamily: 'monospace', fontStyle: 'bold',
+    }).setOrigin(0.5).setDepth(6).setScrollFactor(0);
+
+    // Info panel
+    const pw = 400, ph = 170, pcx = RK.WIDTH - 225, pcy = RK.UI_HEIGHT + 98;
+    this._infoBg = this.add.rectangle(pcx, pcy, pw, ph, 0x080e18, 0.96)
+      .setDepth(30).setAlpha(0).setStrokeStyle(2, 0x44aaff).setScrollFactor(0);
+
+    const lines = [
+      { t: '— HOW TO PLAY —',                   c: '#44aaff', s: '10px', b: true },
+      { t: '▸ 2 runes unlocked by default',      c: '#ffee88', s: '9px'  },
+      { t: '▸ Unlock more as you progress further', c: '#ffee88', s: '9px' },
+      { t: '▸ Stack 2 JUMP runes → double jump', c: '#44ffaa', s: '9px'  },
+      { t: '▸ Place runes in the right slots',   c: '#44ffaa', s: '9px'  },
+      { t: '▸ Time your actions to the beat',    c: '#44ffaa', s: '9px'  },
+      { t: '▸ A / D  or  ← / →  to move',       c: '#ccaa55', s: '9px'  },
+      { t: '▸ Avoid snakes — instant death!',    c: '#ff6644', s: '9px'  },
+      { t: 'Click anywhere to close',            c: '#445566', s: '8px'  },
+    ];
+
+    this._infoObjs = [this._infoBg];
+    lines.forEach((l, i) => {
+      const txt = this.add.text(pcx, pcy - 68 + i * 18, l.t, {
+        fontSize: l.s, color: l.c, fontFamily: 'monospace',
+        fontStyle: l.b ? 'bold' : 'normal',
+      }).setOrigin(0.5).setDepth(31).setAlpha(0).setScrollFactor(0);
+      this._infoObjs.push(txt);
+    });
+
+    this._infoOpen = false;
+    btn.on('pointerdown', (p) => p.event.stopPropagation());
+    btn.on('pointerup', () => this._toggleInfo());
+    this.input.on('pointerdown', () => { if (this._infoOpen) this._toggleInfo(); });
+  }
+
+  _toggleInfo() {
+    this._infoOpen = !this._infoOpen;
+    const a = this._infoOpen ? 1 : 0;
+    this._infoObjs.forEach(o => o.setAlpha(a));
+  }
+
   _buildMusicSelector() {
     const tracks = [
       { key: 'backing_loop_chill',   label: 'CHILL',   color: 0x44ffaa },
@@ -169,6 +214,9 @@ class UIScene extends Phaser.Scene {
     ];
     this._tracks = tracks;
     this._trackIndex = 1;
+
+    // Info (i) button — left of gear
+    this._buildInfoButton(RK.WIDTH - 46, this.WELL_CY);
 
     // Gear button
     const gbx = RK.WIDTH - 22, gby = this.WELL_CY;

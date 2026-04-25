@@ -70,8 +70,10 @@ class GameScene extends Phaser.Scene {
     this._rhythmClock.start();
 
     this.cursors = this.input.keyboard.addKeys({
-      left:  Phaser.Input.Keyboard.KeyCodes.A,
-      right: Phaser.Input.Keyboard.KeyCodes.D,
+      left:      Phaser.Input.Keyboard.KeyCodes.A,
+      right:     Phaser.Input.Keyboard.KeyCodes.D,
+      arrowLeft: Phaser.Input.Keyboard.KeyCodes.LEFT,
+      arrowRight:Phaser.Input.Keyboard.KeyCodes.RIGHT,
     });
 
     this.scene.launch('UIScene', { timeline: this.timeline });
@@ -145,6 +147,49 @@ class GameScene extends Phaser.Scene {
   //  HUD
   // ---------------------------------------------------------------------------
 
+  _buildTutorial(ld) {
+    this._tutorials = (ld.tutorials || []).map(t => ({ ...t, shown: false }));
+    this._tutVisible = false;
+
+    const BY = RK.UI_HEIGHT + 8, BH = 44;
+
+    this._tutBox = this.add.graphics().setDepth(25).setScrollFactor(0).setAlpha(0);
+    this._tutBox.fillStyle(0x000000, 0.80);
+    this._tutBox.fillRoundedRect(RK.WIDTH / 2 - 340, BY, 680, BH, 6);
+    this._tutBox.lineStyle(1, 0xffcc44, 0.6);
+    this._tutBox.strokeRoundedRect(RK.WIDTH / 2 - 340, BY, 680, BH, 6);
+
+    this._tutTxt = this.add.text(RK.WIDTH / 2 - 10, BY + BH / 2, '', {
+      fontSize: '10px', color: '#ffee88', fontFamily: 'monospace', fontStyle: 'bold',
+    }).setOrigin(0.5).setDepth(26).setScrollFactor(0).setAlpha(0);
+
+    // Dismiss hint
+    this._tutDismiss = this.add.text(RK.WIDTH / 2 + 310, BY + BH / 2, '[E] dismiss', {
+      fontSize: '8px', color: '#ffcc44', fontFamily: 'monospace', fontStyle: 'bold',
+    }).setOrigin(1, 0.5).setDepth(26).setScrollFactor(0).setAlpha(0);
+
+    // E key dismisses
+    this.input.keyboard.on('keydown-E', () => this._hideTutorial());
+  }
+
+  _showTutorial(msg) {
+    this._tutVisible = true;
+    this.tweens.killTweensOf(this._tutBox);
+    this.tweens.killTweensOf(this._tutTxt);
+    this.tweens.killTweensOf(this._tutDismiss);
+    this._tutTxt.setText(msg);
+    [this._tutBox, this._tutTxt, this._tutDismiss].forEach(o => o.setAlpha(1));
+  }
+
+  _hideTutorial() {
+    if (!this._tutVisible) return;
+    this._tutVisible = false;
+    this.tweens.add({
+      targets: [this._tutBox, this._tutTxt, this._tutDismiss],
+      alpha: 0, duration: 300,
+    });
+  }
+
   _buildHUD(ld) {
     const style = { fontSize: '9px', color: '#44ffaa', fontFamily: 'monospace',
       backgroundColor: '#00000088', padding: { x: 8, y: 4 } };
@@ -160,9 +205,11 @@ class GameScene extends Phaser.Scene {
       });
     }
 
-    this.add.text(6, RK.PLAY_HEIGHT - 12, 'A/D  move', {
+    this.add.text(6, RK.PLAY_HEIGHT - 12, 'A/D or ←/→  move', {
       fontSize: '8px', color: '#334444', fontFamily: 'monospace',
     }).setDepth(10).setScrollFactor(0);
+
+    this._buildTutorial(ld);
 
     this._bananaTxt = this.add.text(6, RK.UI_HEIGHT + 6, 'Fruits: 0', {
       fontSize: '10px', color: '#ffee22', fontFamily: 'monospace',
@@ -247,6 +294,15 @@ class GameScene extends Phaser.Scene {
       }
 
       if (this.player.y > RK.PLAY_HEIGHT + 80) this.player.die();
+
+      if (this._tutorials) {
+        this._tutorials.forEach(t => {
+          if (!t.shown && this.player.x > t.x) {
+            t.shown = true;
+            this._showTutorial(t.msg);
+          }
+        });
+      }
     }
   }
 

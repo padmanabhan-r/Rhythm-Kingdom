@@ -104,12 +104,11 @@ window.RK.Levels.level1 = {
     { x: 2970, y: 336 }, { x: 3010, y: 336 },
   ],
 
-  signs: [
-    { x: 160,  y: 494, text: 'A / D  to move' },
-    { x: 360,  y: 494, text: 'Click wells above\nto place runes', small: true },
-    { x: 430,  y: 494, text: 'JUMP rune\nclears water', small: true },
-    { x: 760,  y: 494, text: 'Wide gap!\n2x JUMP = double jump', small: true },
-    { x: 1900, y: 494, text: 'ROLL under\nthe pillar!', small: true },
+  tutorials: [
+    { x: 120,  msg: '▲  Click the wells above to place runes  ▲' },
+    { x: 380,  msg: '▲  Place a JUMP rune — fires on the beat to leap water  ▲' },
+    { x: 760,  msg: '▲  Wide gap! JUMP in two consecutive wells = DOUBLE JUMP  ▲' },
+    { x: 1880, msg: '▲  Place a ROLL rune — slides under the gap  ▲' },
   ],
 
   pickups: [],
