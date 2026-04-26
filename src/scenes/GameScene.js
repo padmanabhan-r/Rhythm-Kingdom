@@ -87,7 +87,7 @@ class GameScene extends Phaser.Scene {
       arrowRight:Phaser.Input.Keyboard.KeyCodes.RIGHT,
     });
 
-    this.scene.launch('UIScene', { timeline: this.timeline });
+    this.scene.launch('UIScene', { timeline: this.timeline, levelKey: this.levelKey });
   }
 
   // ---------------------------------------------------------------------------
@@ -214,10 +214,6 @@ class GameScene extends Phaser.Scene {
   _buildHUD(ld) {
     const style = { fontSize: '9px', color: '#44ffaa', fontFamily: 'monospace',
       backgroundColor: '#00000088', padding: { x: 8, y: 4 } };
-    this.add.text(RK.WIDTH - 8, 8, ld.name || '', {
-      fontSize: '9px', color: '#cc9933', fontFamily: 'monospace',
-    }).setOrigin(1, 0).setDepth(10).setScrollFactor(0);
-
     if (ld.hint) {
       const hint = this.add.text(RK.WIDTH / 2, 10, ld.hint, style)
         .setOrigin(0.5, 0).setDepth(10).setScrollFactor(0);

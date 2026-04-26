@@ -12,9 +12,13 @@ class UIScene extends Phaser.Scene {
     this._unlockedActions = ['JUMP', 'ROLL'];
     // Restore session values
     const sess = window.RK && window.RK._session;
-    this._activeBeatCount  = (sess && sess.beatCount)    || RK.BEAT_COUNT;
-    this._savedTrackIndex  = (sess && sess.trackIndex)   || 1;
+    this._activeBeatCount   = (sess && sess.beatCount)    || RK.BEAT_COUNT;
+    this._savedTrackIndex   = (sess && sess.trackIndex)   || 1;
     this._savedVariantIndex = (sess && sess.variantIndex !== undefined) ? sess.variantIndex : 0;
+    this._levelKey  = (data && data.levelKey) || 'level1';
+    const m = this._levelKey.match(/\d+/);
+    this._levelNum  = m ? parseInt(m[0]) : 1;
+    this._levelName = (RK.Levels[this._levelKey] && RK.Levels[this._levelKey].name) || '';
   }
 
   create() {
@@ -32,6 +36,8 @@ class UIScene extends Phaser.Scene {
     this._buildPlayhead();
     this._buildLockedRunesDisplay();
     this._buildMusicSelector();
+    this._buildLevelLabel();
+    this._showLevelIntro();
 
     // Apply saved beat count layout (if not default 8)
     if (this._activeBeatCount !== RK.BEAT_COUNT) {
@@ -615,6 +621,39 @@ class UIScene extends Phaser.Scene {
 
   _onLevelComplete() {
     // no-op — level transition handled by GameScene
+  }
+
+  _buildLevelLabel() {
+    this.add.text(
+      RK.WIDTH - 8, RK.UI_HEIGHT + 8,
+      `LEVEL ${this._levelNum}: ${this._levelName.toUpperCase()}`,
+      { fontSize: '9px', color: '#ffffff', fontFamily: 'monospace',
+        stroke: '#000000', strokeThickness: 3,
+        backgroundColor: '#00000066', padding: { x: 6, y: 3 } }
+    ).setOrigin(1, 0).setDepth(10).setScrollFactor(0);
+  }
+
+  _showLevelIntro() {
+    const cx = RK.WIDTH / 2, cy = RK.UI_HEIGHT + RK.PLAY_HEIGHT / 2;
+    const top = this.add.text(cx, cy - 30, `LEVEL ${this._levelNum}`, {
+      fontSize: '36px', color: '#ffcc44', fontFamily: 'monospace',
+      stroke: '#663300', strokeThickness: 5,
+    }).setOrigin(0.5).setAlpha(0).setDepth(25).setScrollFactor(0);
+    const bot = this.add.text(cx, cy + 20, this._levelName.toUpperCase(), {
+      fontSize: '20px', color: '#ffffff', fontFamily: 'monospace',
+      stroke: '#222222', strokeThickness: 3,
+    }).setOrigin(0.5).setAlpha(0).setDepth(25).setScrollFactor(0);
+    this.tweens.add({
+      targets: [top, bot], alpha: 1, duration: 400, ease: 'Sine.easeOut',
+      onComplete: () => {
+        this.time.delayedCall(2200, () => {
+          this.tweens.add({
+            targets: [top, bot], alpha: 0, duration: 600,
+            onComplete: () => { top.destroy(); bot.destroy(); },
+          });
+        });
+      },
+    });
   }
 
   update(time, delta) {
