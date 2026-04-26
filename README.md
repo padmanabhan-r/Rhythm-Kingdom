@@ -138,8 +138,8 @@ No build step. Pure static files.
 
 ```bash
 # Clone
-git clone https://github.com/your-org/rhythm-kingdom
-cd rhythm-kingdom
+git clone https://github.com/padmanabhan-r/Rhythm-Kingdom
+cd Rhythm-Kingdom
 
 # Start local server (audio requires HTTP, not file://)
 ./start.sh
