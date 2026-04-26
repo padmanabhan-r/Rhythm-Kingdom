@@ -69,7 +69,7 @@ The ElevenLabs Sound Effects API generated every audio stem in the game — retr
 | **Party Lights** | Full-screen colour pulse on every beat — white, red, yellow, green cycling |
 | **Fruit Collectibles** | Melons scattered on elevated platforms — collect for score |
 | **Enemy System** | Snakes and lizards patrol the ground — touch = instant death + restart |
-| **3 Backing Tracks** | Chill / Groove / Intense — switchable mid-game via gear menu |
+| **6 Music Variants** | 3 tracks (Chill / Groove / Intense) × 2 variants each (A/B) — switch anytime via gear ⚙ menu |
 | **Session Persistence** | Well count and music track survive death and level transitions |
 | **Tutorial Overlays** | Contextual hints appear as you reach key moments — dismiss with E |
 | **Procedural Art** | All game sprites generated at runtime via Phaser Graphics — zero image assets for gameplay |
@@ -174,7 +174,7 @@ ELEVENLABS_API_KEY=your_key python3 generate_audio.py
 | Product | Usage |
 |---------|-------|
 | **Sound Effects API** | Generated all 23 game SFX — jump, roll, coconut throw, hit, death, checkpoint, level complete, ambient jungle sounds |
-| **Music API** | Three full backing tracks: Chill, Groove, Intense — African jungle drum compositions at 120 BPM |
+| **Music API** | 6 backing tracks: Chill / Groove / Intense × 2 variants (A/B) — African jungle drum compositions at 120 BPM |
 | **Text-to-Sound** | Menu music — wild African jungle ambience with monkey calls, djembe percussion, dundun bass |
 
 All audio generated with `eleven_text_to_sound_v2`. Prompts use audio terminology: `one-shot`, `loop`, `stem`, `120 BPM`, `African jungle`, `djembe`, `dundun`, `seamless loop`.
