@@ -22,9 +22,9 @@ window.RK.GameFeel = class GameFeel {
   }
 
   screenShake(intensity, duration) {
-    intensity = intensity !== undefined ? intensity : 4;
+    intensity = intensity !== undefined ? intensity : 6;
     duration  = duration  !== undefined ? duration  : 200;
-    this._scene.cameras.main.shake(duration, intensity / 800);
+    this._scene.cameras.main.shake(duration, intensity / 700);
   }
 
   squash(sprite, scaleX, scaleY, duration) {

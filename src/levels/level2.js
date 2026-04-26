@@ -19,9 +19,8 @@ window.RK.Levels.level2 = {
     { x: 660,  y: 320, w: 200, type: 'jungle' },
     { x: 900,  y: 380, w: 200, type: 'jungle' },
     { x: 1100, y: 300, w: 200, type: 'jungle' },
-    { x: 1400, y: 380, w: 600, type: 'jungle' },
-    { x: 1800, y: 320, w: 400, type: 'jungle' },
-    { x: 2000, y: 380, w: 400, type: 'jungle' },
+    { x: 1400, y: 380, w: 1000, type: 'jungle' },
+    { x: 1800, y: 320, w: 400,  type: 'jungle' },
   ],
 
   thorns: [
@@ -52,7 +51,7 @@ window.RK.Levels.level2 = {
     { x: 2040, y: 355 }, { x: 2080, y: 355 },
   ],
 
-  exit: { x: 2360, y: 360 },
+  exit: { x: 2280, y: 360 },
 
   hint: 'Collect the rune shard to unlock Coconut Throw!',
 };
