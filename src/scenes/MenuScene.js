@@ -232,7 +232,7 @@ class MenuScene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(10);
 
     const controls = [
-      ['A / D',      'move monkey'],
+      ['A/D  ←/→',   'move monkey'],
       ['CLICK WELL', 'set beat action'],
       ['ON BEAT',    'action fires!'],
     ];
@@ -261,6 +261,10 @@ class MenuScene extends Phaser.Scene {
 
     const sub = this.add.text(RCX, by + 16, 'or press SPACE', {
       fontSize: '8px', color: '#2a5a30', fontFamily: 'monospace',
+    }).setOrigin(0.5).setDepth(13);
+
+    this.add.text(RCX, by + 48, '⚠ Preview build — you may encounter bugs. Let the dev know!', {
+      fontSize: '8px', color: '#ddaa66', fontFamily: 'monospace',
     }).setOrigin(0.5).setDepth(13);
 
     const hover = (on) => {

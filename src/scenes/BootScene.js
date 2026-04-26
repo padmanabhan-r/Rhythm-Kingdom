@@ -29,6 +29,12 @@ class BootScene extends Phaser.Scene {
     // Fruit collectibles
     this.load.image('fruit_0', 'assets-packs/Fruits/MelonCantaloupe.png');
     this.load.image('fruit_1', 'assets-packs/Fruits/MelonHoneydew.png');
+
+    // Pixel snake enemy sprites (224×32, 8 frames of 28×32)
+    const snakePath = 'assets-packs/PixelSnakes_Free_Carysaurus/';
+    this.load.spritesheet('snake_green', snakePath + 'SnakeGreen-Walk.png', { frameWidth: 28, frameHeight: 32 });
+    this.load.spritesheet('snake_corn',  snakePath + 'SnakeCorn-Walk.png',  { frameWidth: 28, frameHeight: 32 });
+    this.load.spritesheet('snake_red',   snakePath + 'SnakeRed-Walk.png',   { frameWidth: 28, frameHeight: 32 });
   }
 
   create() {
@@ -134,6 +140,10 @@ class BootScene extends Phaser.Scene {
       g.fillStyle(0x8b4513); g.fillRect(13, 34, 5, 5); g.fillRect(22, 34, 5, 5);
       g.fillStyle(0xffcc44, 0.6); g.fillRect(1, 10, 2, 6); g.fillRect(1, 18, 2, 6);
       g.fillStyle(0xffcc44, 0.6); g.fillRect(37, 10, 2, 6); g.fillRect(37, 18, 2, 6);
+      g.fillStyle(0x111111); g.fillRect(11, 5, 8, 6); g.fillRect(21, 5, 8, 6);
+      g.fillStyle(0x1155cc, 0.65); g.fillRect(12, 6, 6, 4); g.fillRect(22, 6, 6, 4);
+      g.fillStyle(0xaaddff, 0.25); g.fillRect(12, 6, 3, 2); g.fillRect(22, 6, 3, 2);
+      g.fillStyle(0x111111); g.fillRect(19, 7, 2, 2);
       g.generateTexture('dance_monk_idle', 40, 40);
     } catch(e) {}
 
@@ -168,6 +178,10 @@ class BootScene extends Phaser.Scene {
       g.fillStyle(0x884400); g.fillRect(33, 25, 2, 5);
       g.fillStyle(0x8b4513); g.fillRect(10, 34, 5, 5); g.fillRect(24, 34, 5, 5);
       g.fillStyle(0xffcc44, 0.5); g.fillRect(0, 6, 2, 8); g.fillRect(0, 16, 2, 8);
+      g.fillStyle(0x111111); g.fillRect(9, 5, 8, 6); g.fillRect(19, 5, 8, 6);
+      g.fillStyle(0x1155cc, 0.65); g.fillRect(10, 6, 6, 4); g.fillRect(20, 6, 6, 4);
+      g.fillStyle(0xaaddff, 0.25); g.fillRect(10, 6, 3, 2); g.fillRect(20, 6, 3, 2);
+      g.fillStyle(0x111111); g.fillRect(17, 7, 2, 2);
       g.generateTexture('dance_monk_l', 40, 40);
     } catch(e) {}
 
@@ -202,6 +216,10 @@ class BootScene extends Phaser.Scene {
       g.fillStyle(0x884400); g.fillRect(37, 7, 2, 6);
       g.fillStyle(0x8b4513); g.fillRect(11, 34, 5, 5); g.fillRect(25, 34, 5, 5);
       g.fillStyle(0xffcc44, 0.5); g.fillRect(38, 6, 2, 8); g.fillRect(38, 16, 2, 8);
+      g.fillStyle(0x111111); g.fillRect(13, 5, 8, 6); g.fillRect(23, 5, 8, 6);
+      g.fillStyle(0x1155cc, 0.65); g.fillRect(14, 6, 6, 4); g.fillRect(24, 6, 6, 4);
+      g.fillStyle(0xaaddff, 0.25); g.fillRect(14, 6, 3, 2); g.fillRect(24, 6, 3, 2);
+      g.fillStyle(0x111111); g.fillRect(21, 7, 2, 2);
       g.generateTexture('dance_monk_r', 40, 40);
     } catch(e) {}
 

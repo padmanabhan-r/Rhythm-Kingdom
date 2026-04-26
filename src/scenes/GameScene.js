@@ -47,6 +47,17 @@ class GameScene extends Phaser.Scene {
     RK.GameSceneBuilder.buildPlatforms(this, ld);
     RK.GameSceneBuilder.buildThorns(this, ld);
     RK.GameSceneBuilder.buildWater(this, ld);
+
+    // Snake walk animations (register once per scene)
+    ['green', 'corn', 'red'].forEach(c => {
+      if (!this.anims.exists('snake_' + c)) {
+        this.anims.create({
+          key: 'snake_' + c,
+          frames: this.anims.generateFrameNumbers('snake_' + c, { start: 0, end: 7 }),
+          frameRate: 8, repeat: -1,
+        });
+      }
+    });
     RK.GameSceneBuilder.buildEnemies(this, ld);
     RK.GameSceneBuilder.buildPickups(this, ld);
     RK.GameSceneBuilder.buildBananas(this, ld);
@@ -155,6 +166,8 @@ class GameScene extends Phaser.Scene {
       this.time.delayedCall(400, () => this._showTutorial(this._tutorials[0].msg));
     }
     this._tutVisible = false;
+    this._tutLastShown = 0;   // timestamp of last tutorial shown
+    this._stuckHintCount = 0; // cap stuck hints
 
     const BY = RK.UI_HEIGHT + 8, BH = 44;
 
@@ -179,11 +192,14 @@ class GameScene extends Phaser.Scene {
 
   _showTutorial(msg) {
     this._tutVisible = true;
+    this._tutLastShown = this.time.now;
+    if (this._tutAutoHide) this._tutAutoHide.remove();
     this.tweens.killTweensOf(this._tutBox);
     this.tweens.killTweensOf(this._tutTxt);
     this.tweens.killTweensOf(this._tutDismiss);
     this._tutTxt.setText(msg);
     [this._tutBox, this._tutTxt, this._tutDismiss].forEach(o => o.setAlpha(1));
+    this._tutAutoHide = this.time.delayedCall(5000, () => this._hideTutorial());
   }
 
   _hideTutorial() {
@@ -302,13 +318,36 @@ class GameScene extends Phaser.Scene {
 
       if (this._tutorials) {
         this._tutorials.forEach(t => {
-          if (!t.shown && this.player.x > t.x) {
+          if (!t.shown && this.player.x > t.x &&
+              (this.time.now - this._tutLastShown) > 8000) {
             t.shown = true;
             this._showTutorial(t.msg);
           }
         });
       }
+
+      // Stuck detection — guide player if no progress for 20s (max 2 hints)
+      if (this._tutorials && this._tutorials.length > 0 && this._stuckHintCount < 2) {
+        this._stuckTimer = (this._stuckTimer || 0) + delta;
+        if (this._stuckX === undefined || Math.abs(this.player.x - this._stuckX) > 80) {
+          this._stuckX = this.player.x;
+          this._stuckTimer = 0;
+        } else if (this._stuckTimer > 20000 && !this._tutVisible) {
+          this._stuckTimer = 0;
+          this._stuckHintCount++;
+          this._showStuckHint(this.player.x);
+        }
+      }
     }
+  }
+
+  _showStuckHint(x) {
+    let msg;
+    if (x < 480)       msg = '▲  Stuck? Stack JUMP in 2 consecutive wells → DOUBLE JUMP!  ▲';
+    else if (x < 1060) msg = '▲  Stuck? Double jump clears wide water — 2 JUMPs in a row!  ▲';
+    else if (x < 2020) msg = '▲  Stuck? ROLL slides under the gate — place before you reach it!  ▲';
+    else               msg = '▲  Stuck? Double jump the wide gaps — stack 2 JUMP runes!  ▲';
+    this._showTutorial(msg);
   }
 
   // ---------------------------------------------------------------------------

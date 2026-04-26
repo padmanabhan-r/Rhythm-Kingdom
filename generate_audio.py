@@ -1,6 +1,16 @@
 """Generate all game music and sound effects using ElevenLabs APIs."""
 import os
+from pathlib import Path
 from elevenlabs import ElevenLabs
+
+# Load .env from project root if present
+_env = Path(__file__).parent / ".env"
+if _env.exists():
+    for line in _env.read_text().splitlines():
+        line = line.strip()
+        if line and not line.startswith("#") and "=" in line:
+            k, _, v = line.partition("=")
+            os.environ.setdefault(k.strip(), v.strip())
 
 client = ElevenLabs(api_key=os.environ.get("ELEVENLABS_API_KEY", ""))
 OUT_DIR = "assets/audio"
@@ -15,6 +25,18 @@ LOOPS = {
     "backing_loop_intense": ("feral African jungle drum battle, 120 BPM exactly, triple-time djembe "
                              "sprints, rumbling dundun bass, wild shakers, thunder, stampeding "
                              "percussion, savage high-energy, full room-filling, seamless loop"),
+    "backing_loop_chill_2": ("African jungle groove variant 2, 120 BPM exactly, melodic kalimba "
+                             "over soft dundun bass, gentle balafon chimes, polyrhythmic shaker "
+                             "pattern, tropical night insects, warm ambient glow, mellow organic, "
+                             "seamless loop, full room-filling"),
+    "backing_loop_2":       ("African tribal rhythm variant 2, 120 BPM, syncopated kpanlogo drum "
+                             "pattern, slit drum melody accent, call-and-response clapping, bright "
+                             "log drum fills, natural organic groove, deep bass presence, "
+                             "full room-filling, seamless loop"),
+    "backing_loop_intense_2": ("furious African percussion storm variant 2, 120 BPM exactly, "
+                               "double-time djembe flurry, deep dundun bass thunder, metal gong "
+                               "strikes on every beat, multi-drum polyrhythm clash, war drums, "
+                               "aggressive primal energy, full room-filling, seamless loop"),
     "menu_loop":            ("wild African jungle ambience, 120 BPM, frantic djembe drumming, "
                              "howling monkeys screaming and chattering, chimpanzee calls echoing, "
                              "tropical birds shrieking, dense layered percussion, bamboo shakers, "

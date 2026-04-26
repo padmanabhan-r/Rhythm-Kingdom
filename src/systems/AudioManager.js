@@ -25,6 +25,7 @@ window.RK.AudioManager = class AudioManager {
     this._ensureCtx();
     const keys = [
       'backing_loop_chill', 'backing_loop', 'backing_loop_intense', 'menu_loop',
+      'backing_loop_chill_2', 'backing_loop_2', 'backing_loop_intense_2',
       'jump', 'roll', 'coconut_throw', 'coconut_impact', 'punch',
       'unlock_action', 'checkpoint',
       'invalid_beat', 'hit', 'death', 'level_complete',
@@ -60,6 +61,8 @@ window.RK.AudioManager = class AudioManager {
   playLoop(key) {
     const ctx = this._ensureCtx();
     if (!ctx) return;
+    // Fallback: variant 2 not loaded → play variant 1
+    if (!this.buffers[key] && key.endsWith('_2')) key = key.slice(0, -2);
     this.stopLoop(key);
     if (this.buffers[key]) {
       const gain = ctx.createGain();

@@ -9,10 +9,12 @@
 window.RK.Enemy = class Enemy extends Phaser.Physics.Arcade.Sprite {
 
   constructor(scene, x, y, type) {
-    const tex = { lizard: 'enemy_lizard', bat: 'enemy_bat', guardian: 'enemy_guardian', snake: 'enemy_snake' }[type]
-      || 'enemy_lizard';
+    const SNAKE_TEXS = ['snake_green', 'snake_corn', 'snake_red'];
+    const isSnake = type === 'snake';
+    const snakeTex = isSnake ? SNAKE_TEXS[Math.floor(Math.random() * SNAKE_TEXS.length)] : null;
+    const tex = snakeTex || ({ lizard: 'enemy_lizard', bat: 'enemy_bat', guardian: 'enemy_guardian' }[type] || 'enemy_lizard');
 
-    super(scene, x, y, tex);
+    super(scene, x, y, tex, isSnake ? 0 : undefined);
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
@@ -26,7 +28,13 @@ window.RK.Enemy = class Enemy extends Phaser.Physics.Arcade.Sprite {
 
     this.body.setCollideWorldBounds(true);
     this.body.setAllowGravity(type !== 'bat');
-    if (type === 'snake') { this.body.setSize(30, 10); this.body.setOffset(0, 6); }
+
+    if (isSnake) {
+      this.setScale(1.4);
+      this.play(snakeTex);            // animation key matches texture key
+      this.body.setSize(26, 14);
+      this.body.setOffset(1, 14);
+    }
     this.setDepth(4);
 
     if (type === 'bat') {

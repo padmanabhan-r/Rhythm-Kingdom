@@ -82,7 +82,7 @@ window.RK.Levels.level1 = {
 
   enemies: [
     { x: 340,  y: 462, type: 'snake',  patrol: [240,  460]  },
-    { x: 1520, y: 462, type: 'snake',  patrol: [1430, 1640] },
+    { x: 1520, y: 462, type: 'snake',  patrol: [1460, 1640] },
     { x: 1780, y: 462, type: 'lizard', patrol: [1720, 1940] },
     { x: 2240, y: 462, type: 'snake',  patrol: [2210, 2300] },
     { x: 2640, y: 462, type: 'lizard', patrol: [2600, 2680] },
@@ -105,10 +105,10 @@ window.RK.Levels.level1 = {
   ],
 
   tutorials: [
-    { x: 120,  msg: '▲  Click the wells above to place runes  ▲' },
-    { x: 380,  msg: '▲  Place a JUMP rune — fires on the beat to leap water  ▲' },
-    { x: 760,  msg: '▲  Wide gap! JUMP in two consecutive wells = DOUBLE JUMP  ▲' },
-    { x: 1880, msg: '▲  Place a ROLL rune — slides under the gap  ▲' },
+    { x: 90,   msg: '▲  A/D or ←/→ to move — click wells above to place runes  ▲' },
+    { x: 148,  msg: '▲  Stuck? Stack JUMP in 2 consecutive wells → DOUBLE JUMP to reach high platforms!  ▲' },
+    { x: 385,  msg: '▲  Place a JUMP rune before the water — the beat fires it!  ▲' },
+    { x: 1820, msg: '▲  Stuck? ROLL slides low — place it BEFORE reaching the gate!  ▲' },
   ],
 
   pickups: [],

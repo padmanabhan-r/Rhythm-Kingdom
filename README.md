@@ -110,28 +110,24 @@ COCONUT — throws a spinning coconut that kills enemies on impact
 
 ## Screenshots
 
-**Home Screen — A Monkey's Rhythm Journey**
+**Home Screen — Title & How To Play**
 <p align="center">
-  <!-- Replace with actual screenshot -->
-  <img src="images/screenshot-menu.png" alt="Rhythm Kingdom menu — dancing monkey with party lights" width="700" />
+  <img src="images/screenshot-menu.png" alt="Rhythm Kingdom title screen — dancing monkey with maracas, HOW TO PLAY panel, green PLAY button, jungle parallax background" width="700" />
 </p>
 
-**Level 1 — The Root Gate**
+**Level 1 — Jungle Platforming**
 <p align="center">
-  <!-- Replace with actual screenshot -->
-  <img src="images/screenshot-level1.png" alt="Level 1 — jungle path with water pits and rune sequencer" width="700" />
+  <img src="images/screenshot-level1.png" alt="Level 1 gameplay — monkey on floating jungle platform, 8 octagonal beat wells at top with JUMP/ROLL/COCONUT runes, fruit collectibles, water below" width="700" />
 </p>
 
-**Rune Wells — Beat Sequencer**
+**Rune Tutorial — Rolling Under the Gap**
 <p align="center">
-  <!-- Replace with actual screenshot -->
-  <img src="images/screenshot-wells.png" alt="Octagonal rune wells with JUMP and ROLL runes placed" width="700" />
+  <img src="images/screenshot-wells.png" alt="Tutorial overlay: Place a ROLL rune — monkey sliding under a tall standing pillar" width="700" />
 </p>
 
-**Double Jump — Clearing a Wide Gap**
+**Mid-Air — Jump + Coconut Throw**
 <p align="center">
-  <!-- Replace with actual screenshot -->
-  <img src="images/screenshot-doublejump.png" alt="Monkey clearing a wide water pit with double jump" width="700" />
+  <img src="images/screenshot-doublejump.png" alt="Monkey mid-air above jungle platforms, all 8 beat wells filled, coconut projectile in flight" width="700" />
 </p>
 
 ---

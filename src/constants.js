@@ -16,7 +16,7 @@ window.RK = {
   GRAVITY: 900,
   PLAYER_SPEED: 200,
   JUMP_FORCE: -420,
-  JUMP_FORCE_DOUBLE: -560,
+  JUMP_FORCE_DOUBLE: -480,
   COYOTE_MS: 150,
   COCONUT_SPEED: 250,
 
@@ -29,7 +29,7 @@ window.RK = {
   },
 
   // Persists across scene restarts for the browser session
-  _session: { beatCount: 8, trackIndex: 1, trackKey: 'backing_loop' },
+  _session: { beatCount: 8, trackIndex: 1, trackKey: 'backing_loop', variantIndex: 0 },
 
   COLORS: {
     BG:      0x0d2318,

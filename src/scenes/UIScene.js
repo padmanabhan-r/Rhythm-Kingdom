@@ -12,8 +12,9 @@ class UIScene extends Phaser.Scene {
     this._unlockedActions = ['JUMP', 'ROLL'];
     // Restore session values
     const sess = window.RK && window.RK._session;
-    this._activeBeatCount = (sess && sess.beatCount) || RK.BEAT_COUNT;
-    this._savedTrackIndex = (sess && sess.trackIndex) || 1;
+    this._activeBeatCount  = (sess && sess.beatCount)    || RK.BEAT_COUNT;
+    this._savedTrackIndex  = (sess && sess.trackIndex)   || 1;
+    this._savedVariantIndex = (sess && sess.variantIndex !== undefined) ? sess.variantIndex : 0;
   }
 
   create() {
@@ -213,7 +214,8 @@ class UIScene extends Phaser.Scene {
       { key: 'backing_loop_intense', label: 'INTENSE', color: 0xff4422 },
     ];
     this._tracks = tracks;
-    this._trackIndex = 1;
+    this._trackIndex   = this._savedTrackIndex;
+    this._variantIndex = this._savedVariantIndex;
 
     // Info (i) button — left of gear
     this._buildInfoButton(RK.WIDTH - 46, this.WELL_CY);
@@ -232,12 +234,10 @@ class UIScene extends Phaser.Scene {
     }
     gl.fillCircle(gbx, gby, 2.5);
 
-    // Settings popup — centered, sized to fit all buttons
-    // Wells: 7 × 40px + 6 × 4px gap = 304px  →  popup width 340
-    // Music: 3 × 86px + 2 × 6px gap = 270px  →  fits inside
-    const pw = 340, ph = 130;
-    const pcx = RK.WIDTH - pw / 2 - 12;   // right-aligned with 12px margin
-    const pcy = RK.UI_HEIGHT + 72;
+    // Settings popup — right-aligned, expanded to fit variant row
+    const pw = 340, ph = 168;
+    const pcx = RK.WIDTH - pw / 2 - 12;
+    const pcy = RK.UI_HEIGHT + 91;   // shifted down 19px to keep top edge same
 
     this._pickerBg = this.add.rectangle(pcx, pcy, pw, ph, 0x120e08, 0.97)
       .setDepth(20).setAlpha(0).setStrokeStyle(2, 0xcc9933).setScrollFactor(0);
@@ -246,7 +246,7 @@ class UIScene extends Phaser.Scene {
     const PAD = pcx - pw / 2 + 12;  // left text margin
 
     // ── WELLS ─────────────────────────────────────────────────────────────────
-    popObjs.push(this.add.text(PAD, pcy - 52, 'WELLS', {
+    popObjs.push(this.add.text(PAD, pcy - 71, 'WELLS', {
       fontSize: '8px', color: '#cc9933', fontFamily: 'monospace',
     }).setDepth(22).setAlpha(0).setScrollFactor(0));
 
@@ -254,7 +254,7 @@ class UIScene extends Phaser.Scene {
     this._wellCountBtns = [];
     for (let n = 2; n <= 8; n++) {
       const bx = pcx - 132 + (n - 2) * 44;
-      const by = pcy - 28;
+      const by = pcy - 47;
       const active = n === this._activeBeatCount;
       const btn = this.add.rectangle(bx, by, 40, 24, active ? 0x1e4a1e : 0x1a1a0e)
         .setDepth(21).setAlpha(0).setScrollFactor(0).setInteractive({ useHandCursor: true })
@@ -272,18 +272,18 @@ class UIScene extends Phaser.Scene {
     // Divider
     const div = this.add.graphics().setDepth(21).setAlpha(0).setScrollFactor(0);
     div.lineStyle(1, 0x443322, 0.7);
-    div.beginPath(); div.moveTo(pcx - pw / 2 + 12, pcy); div.lineTo(pcx + pw / 2 - 12, pcy); div.strokePath();
+    div.beginPath(); div.moveTo(pcx - pw / 2 + 12, pcy - 19); div.lineTo(pcx + pw / 2 - 12, pcy - 19); div.strokePath();
     popObjs.push(div);
 
     // ── MUSIC ─────────────────────────────────────────────────────────────────
-    popObjs.push(this.add.text(PAD, pcy + 8, 'MUSIC', {
+    popObjs.push(this.add.text(PAD, pcy - 11, 'MUSIC', {
       fontSize: '8px', color: '#cc9933', fontFamily: 'monospace',
     }).setDepth(22).setAlpha(0).setScrollFactor(0));
 
     // 3 buttons centered on pcx: step=92px, total span=2*92=184, half=92
     this._pickerBtns = tracks.map((t, i) => {
       const px = pcx - 92 + i * 92;
-      const py = pcy + 36;
+      const py = pcy + 17;
       const btn = this.add.rectangle(px, py, 86, 28, t.color, 0.12)
         .setDepth(21).setAlpha(0).setScrollFactor(0).setInteractive({ useHandCursor: true })
         .setStrokeStyle(1, t.color);
@@ -297,6 +297,27 @@ class UIScene extends Phaser.Scene {
       return { btn, lbl, track: t };
     });
 
+    // ── VARIANT (1 / 2) inline below each track ───────────────────────────────
+    // Each track gets its own [1] [2] pair. Only active track's pair is visible.
+    this._perTrackVariants = tracks.map((t, i) => {
+      const trackPx = pcx - 92 + i * 92;
+      const vy = pcy + 42;
+      return [0, 1].map(v => {
+        const vx = trackPx - 20 + v * 40;
+        const on = v === this._variantIndex;
+        const btn = this.add.rectangle(vx, vy, 34, 18, on ? 0x1e3a4a : 0x1a1a0e)
+          .setDepth(21).setAlpha(0).setScrollFactor(0).setInteractive({ useHandCursor: true })
+          .setStrokeStyle(1, on ? 0x44aaff : 0x443322);
+        btn.on('pointerdown', (p) => p.event.stopPropagation());
+        btn.on('pointerup', () => this._selectVariant(v));
+        const lbl = this.add.text(vx, vy, String(v + 1), {
+          fontSize: '9px', color: on ? '#44aaff' : '#886633',
+          fontFamily: 'monospace', fontStyle: 'bold',
+        }).setOrigin(0.5).setDepth(22).setAlpha(0).setScrollFactor(0);
+        return { btn, lbl, v };
+      });
+    });
+
     this._popObjs = popObjs;
     this._pickerOpen = false;
   }
@@ -306,17 +327,62 @@ class UIScene extends Phaser.Scene {
     const a = this._pickerOpen ? 1 : 0;
     this._pickerBg.setAlpha(a);
     this._popObjs.forEach(o => o.setAlpha(a));
+    this._updateTrackBtns();
+    this._refreshVariantVisibility();
+  }
+
+  _effectiveLoopKey() {
+    const base = this._tracks[this._trackIndex].key;
+    return this._variantIndex === 1 ? base + '_2' : base;
   }
 
   _selectTrack(index) {
     this._trackIndex = index;
-    const track = this._tracks[index];
+    const loopKey = this._effectiveLoopKey();
     if (window.RK._session) {
       window.RK._session.trackIndex = index;
-      window.RK._session.trackKey   = track.key;
+      window.RK._session.trackKey   = loopKey;
     }
-    this.game.events.emit('rk_loop_change', { loopKey: track.key });
+    this.game.events.emit('rk_loop_change', { loopKey });
+    this._updateTrackBtns();
+    this._refreshVariantVisibility();
+  }
+
+  _selectVariant(v) {
+    this._variantIndex = v;
+    if (window.RK._session) window.RK._session.variantIndex = v;
+    this.game.events.emit('rk_loop_change', { loopKey: this._effectiveLoopKey() });
+    this._updateVariantBtns();
     this._toggleSettings();
+  }
+
+  _updateTrackBtns() {
+    if (!this._pickerBtns) return;
+    this._pickerBtns.forEach(({ btn, track }, i) => {
+      const on = i === this._trackIndex;
+      btn.setFillStyle(track.color, on ? 0.35 : 0.12);
+      btn.setStrokeStyle(on ? 2 : 1, track.color);
+    });
+  }
+
+  _refreshVariantVisibility() {
+    if (!this._perTrackVariants) return;
+    this._perTrackVariants.forEach((pair, i) => {
+      const va = (this._pickerOpen && i === this._trackIndex) ? 1 : 0;
+      pair.forEach(({ btn, lbl }) => { btn.setAlpha(va); lbl.setAlpha(va); });
+    });
+  }
+
+  _updateVariantBtns() {
+    if (!this._perTrackVariants) return;
+    this._perTrackVariants.forEach(pair => {
+      pair.forEach(({ btn, lbl, v }) => {
+        const on = v === this._variantIndex;
+        btn.setFillStyle(on ? 0x1e3a4a : 0x1a1a0e);
+        btn.setStrokeStyle(1, on ? 0x44aaff : 0x443322);
+        lbl.setStyle({ color: on ? '#44aaff' : '#886633' });
+      });
+    });
   }
 
   _setActiveBeatCount(n) {
@@ -466,14 +532,15 @@ class UIScene extends Phaser.Scene {
   }
 
   _beatScreenPulse(beatIndex) {
-    if (!this._pulseRect) {
+    if (!this._pulseRect || !this._pulseRect.scene) {
       this._pulseRect = this.add.rectangle(
         RK.WIDTH / 2, RK.HEIGHT / 2, RK.WIDTH, RK.HEIGHT, 0xffffff
       ).setDepth(10).setScrollFactor(0).setAlpha(0);
     }
     const cols = [0xffffff, 0xff2222, 0xffee22, 0x22ff44];
     this._pulseRect.setFillStyle(cols[beatIndex % 4], 1);
-    this._pulseAlpha = 0.13;
+    this._pulseAlpha = 0.22;
+    this._pulseRect.setAlpha(this._pulseAlpha);
   }
 
   _updateBeatNumbers(activeBeat) {
@@ -551,8 +618,8 @@ class UIScene extends Phaser.Scene {
   }
 
   update(time, delta) {
-    if (this._pulseAlpha > 0 && this._pulseRect) {
-      this._pulseAlpha = Math.max(0, this._pulseAlpha - delta / 1700);
+    if (this._pulseAlpha > 0 && this._pulseRect && this._pulseRect.scene) {
+      this._pulseAlpha = Math.max(0, this._pulseAlpha - delta / 2200);
       this._pulseRect.setAlpha(this._pulseAlpha);
     }
   }
@@ -565,5 +632,7 @@ class UIScene extends Phaser.Scene {
     this.game.events.off('rk_slot_success',  this._onSlotSuccess,   this);
     this.game.events.off('rk_slot_invalid',  this._onSlotInvalid,   this);
     this.game.events.off('rk_action_unlock', this._onActionUnlock,  this);
+    this._pulseRect = null;
+    this._pulseAlpha = 0;
   }
 }
