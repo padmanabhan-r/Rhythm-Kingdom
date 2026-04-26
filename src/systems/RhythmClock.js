@@ -9,6 +9,7 @@ window.RK.RhythmClock = class RhythmClock {
     this._events = gameEvents;
     this._loopKey = loopKey || 'backing_loop';
     this._intervalId = null;
+    this._pendingBeats = [];
     this._nextBeatTime = 0;
     this._beatIndex = 0;
     this._running = false;
@@ -28,6 +29,8 @@ window.RK.RhythmClock = class RhythmClock {
 
   stop() {
     this._running = false;
+    this._pendingBeats.forEach(id => clearTimeout(id));
+    this._pendingBeats = [];
     if (this._intervalId !== null) {
       clearInterval(this._intervalId);
       this._intervalId = null;
@@ -68,9 +71,11 @@ window.RK.RhythmClock = class RhythmClock {
     while (this._nextBeatTime < now + 0.1) {
       const beatIdx = this._beatIndex;
       const delay = Math.max(0, (this._nextBeatTime - now) * 1000);
-      setTimeout(() => {
+      const tid = setTimeout(() => {
+        this._pendingBeats = this._pendingBeats.filter(x => x !== tid);
         if (this._running) this._events.emit('rk_beat', beatIdx);
       }, delay);
+      this._pendingBeats.push(tid);
       this._nextBeatTime += BEAT_S;
       this._beatIndex = (this._beatIndex + 1) % this._beatCount;
     }
