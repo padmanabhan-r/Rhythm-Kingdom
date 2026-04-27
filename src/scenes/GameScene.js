@@ -273,7 +273,6 @@ class GameScene extends Phaser.Scene {
   // ---------------------------------------------------------------------------
 
   _bindEvents() {
-    console.log('[RK] GameScene._bindEvents called, rk_beat listener count before:', this.game.events.listenerCount('rk_beat'));
     const g = this.game.events;
     g.off('rk_beat',               this._onBeat,            this);
     g.off('rk_spawn_coconut',      this._onSpawnCoconut,    this);
@@ -291,7 +290,6 @@ class GameScene extends Phaser.Scene {
     g.on('rk_player_dead',        this._onPlayerDead,      this);
     g.on('rk_loop_change',        this._onLoopChange,      this);
     g.on('rk_beat_count_change',  this._onBeatCountChange, this);
-    console.log('[RK] GameScene._bindEvents done, rk_beat listener count after:', this.game.events.listenerCount('rk_beat'));
   }
 
   // ---------------------------------------------------------------------------
@@ -362,7 +360,6 @@ class GameScene extends Phaser.Scene {
   // ---------------------------------------------------------------------------
 
   _onBeat(beatIndex) {
-    console.log('[RK] _onBeat fired beatIndex=' + beatIndex);
     if (!this.player || this.player.dead) return;
 
     this._gameFeel.beatPulse(beatIndex);

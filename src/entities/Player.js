@@ -136,20 +136,6 @@ window.RK.Player = class Player extends Phaser.Physics.Arcade.Sprite {
     });
   }
 
-  doPunch() {
-    const dir = this.facingRight ? 1 : -1;
-    // Visual punch lean
-    this.setScale(1.2, 0.9);
-    this.scene.tweens.add({
-      targets: this, scaleX: 1, scaleY: 1, duration: 120, ease: 'Sine.easeOut',
-    });
-    this.scene.game.events.emit('rk_player_punch', {
-      x: this.x + dir * 40,
-      y: this.y,
-      dir,
-    });
-  }
-
   unlock(action) {
     if (!this.unlockedActions.includes(action)) {
       this.unlockedActions.push(action);

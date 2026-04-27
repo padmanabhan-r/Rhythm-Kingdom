@@ -381,6 +381,7 @@ class BootScene extends Phaser.Scene {
     RK.BootTextures.actionIcon(g, 'action_roll',    RK.ACTION_COLORS.ROLL,    'roll');
     RK.BootTextures.actionIcon(g, 'action_coconut', RK.ACTION_COLORS.COCONUT, 'coconut');
     // Grey locked versions of rune cards
+    RK.BootTextures.actionIcon(g, 'action_jump_locked',    0x334466, 'jump');
     RK.BootTextures.actionIcon(g, 'action_roll_locked',    0x445566, 'roll');
     RK.BootTextures.actionIcon(g, 'action_coconut_locked', 0x445544, 'coconut');
 

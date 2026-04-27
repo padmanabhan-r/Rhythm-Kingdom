@@ -600,8 +600,6 @@ class UIScene extends Phaser.Scene {
     const messages = {
       COCONUT: 'COCONUT RUNE UNLOCKED!\nThrow coconuts at enemies to kill them.',
       JUMP:    'JUMP RUNE UNLOCKED!\nPlace JUMP in the timeline to leap.',
-      STOMP:   'STOMP RUNE UNLOCKED!\nStomp enemies from above.',
-      FIRE:    'FIRE RUNE UNLOCKED!\nShoot fireballs at enemies.',
     };
     const msg = messages[action] || (action + ' RUNE UNLOCKED!');
     const cx = RK.WIDTH / 2;
