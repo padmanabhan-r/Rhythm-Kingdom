@@ -108,6 +108,7 @@ window.RK.Levels.level1 = {
     { x: 90,   msg: '▲  A/D or ←/→ to move — click wells above to place runes  ▲' },
     { x: 148,  msg: '▲  Stuck? Stack JUMP in 2 consecutive wells → DOUBLE JUMP to reach high platforms!  ▲' },
     { x: 385,  msg: '▲  Place a JUMP rune before the water — the beat fires it!  ▲' },
+    { x: 1500, msg: '▲  Tip: tap ⚙ (top-right) to change rune well count or switch to INTENSE music!  ▲' },
     { x: 1820, msg: '▲  Stuck? ROLL slides low — place it BEFORE reaching the gate!  ▲' },
   ],
 

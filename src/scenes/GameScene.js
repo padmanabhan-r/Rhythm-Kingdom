@@ -273,14 +273,25 @@ class GameScene extends Phaser.Scene {
   // ---------------------------------------------------------------------------
 
   _bindEvents() {
-    this.game.events.on('rk_beat',               this._onBeat,            this);
-    this.game.events.on('rk_spawn_coconut',      this._onSpawnCoconut,    this);
-    this.game.events.on('rk_player_land',        this._onPlayerLand,      this);
-    this.game.events.on('rk_player_roll',        this._onPlayerRoll,      this);
-    this.game.events.on('rk_player_hit',         this._onPlayerHit,       this);
-    this.game.events.on('rk_player_dead',        this._onPlayerDead,      this);
-    this.game.events.on('rk_loop_change',        this._onLoopChange,      this);
-    this.game.events.on('rk_beat_count_change',  this._onBeatCountChange, this);
+    console.log('[RK] GameScene._bindEvents called, rk_beat listener count before:', this.game.events.listenerCount('rk_beat'));
+    const g = this.game.events;
+    g.off('rk_beat',               this._onBeat,            this);
+    g.off('rk_spawn_coconut',      this._onSpawnCoconut,    this);
+    g.off('rk_player_land',        this._onPlayerLand,      this);
+    g.off('rk_player_roll',        this._onPlayerRoll,      this);
+    g.off('rk_player_hit',         this._onPlayerHit,       this);
+    g.off('rk_player_dead',        this._onPlayerDead,      this);
+    g.off('rk_loop_change',        this._onLoopChange,      this);
+    g.off('rk_beat_count_change',  this._onBeatCountChange, this);
+    g.on('rk_beat',               this._onBeat,            this);
+    g.on('rk_spawn_coconut',      this._onSpawnCoconut,    this);
+    g.on('rk_player_land',        this._onPlayerLand,      this);
+    g.on('rk_player_roll',        this._onPlayerRoll,      this);
+    g.on('rk_player_hit',         this._onPlayerHit,       this);
+    g.on('rk_player_dead',        this._onPlayerDead,      this);
+    g.on('rk_loop_change',        this._onLoopChange,      this);
+    g.on('rk_beat_count_change',  this._onBeatCountChange, this);
+    console.log('[RK] GameScene._bindEvents done, rk_beat listener count after:', this.game.events.listenerCount('rk_beat'));
   }
 
   // ---------------------------------------------------------------------------
@@ -351,6 +362,7 @@ class GameScene extends Phaser.Scene {
   // ---------------------------------------------------------------------------
 
   _onBeat(beatIndex) {
+    console.log('[RK] _onBeat fired beatIndex=' + beatIndex);
     if (!this.player || this.player.dead) return;
 
     this._gameFeel.beatPulse(beatIndex);
@@ -426,6 +438,7 @@ _onPlayerLand(data) { this._gameFeel.dustBurst(data.x, data.y + 14); }
       this.time.delayedCall(600, () => {
         this.player.revive(this._checkpointX, this._checkpointY - 40);
         this.timeline.clearAll();
+        this.game.events.emit('rk_timeline_clear');
         this._rhythmClock.start();
       });
     } else {
@@ -534,11 +547,11 @@ _onPlayerLand(data) { this._gameFeel.dustBurst(data.x, data.y + 14); }
     this.cameras.main.flash(300, 255, 240, 100);
     this.game.events.emit('rk_level_complete');
 
-    const banner = this.add.text(RK.WIDTH / 2, RK.PLAY_HEIGHT / 2 - 40, 'LEVEL COMPLETE', {
+    this._completeBanner = this.add.text(RK.WIDTH / 2, RK.PLAY_HEIGHT / 2 - 40, 'LEVEL COMPLETE', {
       fontSize: '24px', color: '#ffcc44', fontFamily: 'monospace',
       stroke: '#885500', strokeThickness: 4,
     }).setOrigin(0.5).setDepth(30).setScrollFactor(0);
-    this.tweens.add({ targets: banner, scale: { from: 0.2, to: 1 }, duration: 400, ease: 'Back.easeOut' });
+    this.tweens.add({ targets: this._completeBanner, scale: { from: 0.2, to: 1 }, duration: 400, ease: 'Back.easeOut' });
 
     const next = this.levelData.nextLevel;
     this.time.delayedCall(2400, () => {
@@ -552,17 +565,24 @@ _onPlayerLand(data) { this._gameFeel.dustBurst(data.x, data.y + 14); }
   }
 
   _showWinScreen() {
+    if (this._completeBanner) { this._completeBanner.destroy(); this._completeBanner = null; }
     const W = RK.WIDTH, H = RK.PLAY_HEIGHT;
-    this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.8).setDepth(28).setScrollFactor(0);
-    this.add.text(W / 2, H / 2 - 60, 'YOU DID IT', {
+    this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.85).setDepth(28).setScrollFactor(0);
+    this.add.text(W / 2, H / 2 - 100, 'YOU DID IT', {
       fontSize: '36px', color: '#ffcc44', fontFamily: 'monospace',
+      stroke: '#885500', strokeThickness: 4,
     }).setOrigin(0.5).setDepth(29).setScrollFactor(0);
-    this.add.text(W / 2, H / 2,
-      'Movement is manual.\nRhythm is power.\nYou are the beat.', {
-        fontSize: '11px', color: '#44ffaa', fontFamily: 'monospace',
-        align: 'center', lineSpacing: 8,
+    this.add.text(W / 2, H / 2 - 40,
+      'You got the rhythm.\nThe jungle bows to the beat.', {
+        fontSize: '13px', color: '#44ffaa', fontFamily: 'monospace',
+        align: 'center', lineSpacing: 10,
       }).setOrigin(0.5).setDepth(29).setScrollFactor(0);
-    const p = this.add.text(W / 2, H / 2 + 80, 'SPACE to menu', {
+    this.add.text(W / 2, H / 2 + 30,
+      '✦  More levels & more runes coming soon  ✦', {
+        fontSize: '10px', color: '#ff8844', fontFamily: 'monospace',
+        align: 'center',
+      }).setOrigin(0.5).setDepth(29).setScrollFactor(0);
+    const p = this.add.text(W / 2, H / 2 + 90, 'SPACE to menu', {
       fontSize: '11px', color: '#ffffff', fontFamily: 'monospace',
     }).setOrigin(0.5).setDepth(29).setScrollFactor(0);
     this.tweens.add({ targets: p, alpha: 0, duration: 550, yoyo: true, repeat: -1 });

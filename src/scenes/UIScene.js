@@ -46,12 +46,21 @@ class UIScene extends Phaser.Scene {
 
     this.input.on('pointerdown', this._onPointerDown, this);
 
-    this.game.events.on('rk_beat',          this._onBeat,          this);
-    this.game.events.on('rk_player_dead',   this._onPlayerDead,    this);
-    this.game.events.on('rk_level_complete',this._onLevelComplete,  this);
-    this.game.events.on('rk_slot_success',  this._onSlotSuccess,   this);
-    this.game.events.on('rk_slot_invalid',  this._onSlotInvalid,   this);
-    this.game.events.on('rk_action_unlock', this._onActionUnlock,  this);
+    const g = this.game.events;
+    g.off('rk_beat',           this._onBeat,          this);
+    g.off('rk_player_dead',    this._onPlayerDead,    this);
+    g.off('rk_level_complete', this._onLevelComplete, this);
+    g.off('rk_slot_success',   this._onSlotSuccess,   this);
+    g.off('rk_slot_invalid',   this._onSlotInvalid,   this);
+    g.off('rk_action_unlock',  this._onActionUnlock,  this);
+    g.off('rk_timeline_clear', this._onTimelineClear, this);
+    g.on('rk_beat',           this._onBeat,          this);
+    g.on('rk_player_dead',    this._onPlayerDead,    this);
+    g.on('rk_level_complete', this._onLevelComplete, this);
+    g.on('rk_slot_success',   this._onSlotSuccess,   this);
+    g.on('rk_slot_invalid',   this._onSlotInvalid,   this);
+    g.on('rk_action_unlock',  this._onActionUnlock,  this);
+    g.on('rk_timeline_clear', this._onTimelineClear, this);
   }
 
   // ---------------------------------------------------------------------------
@@ -619,6 +628,10 @@ class UIScene extends Phaser.Scene {
     this._updateWellVisuals();
   }
 
+  _onTimelineClear() {
+    this._updateWellVisuals();
+  }
+
   _onLevelComplete() {
     // no-op — level transition handled by GameScene
   }
@@ -665,12 +678,13 @@ class UIScene extends Phaser.Scene {
 
   // ---------------------------------------------------------------------------
   shutdown() {
-    this.game.events.off('rk_beat',          this._onBeat,          this);
-    this.game.events.off('rk_player_dead',   this._onPlayerDead,    this);
-    this.game.events.off('rk_level_complete',this._onLevelComplete,  this);
-    this.game.events.off('rk_slot_success',  this._onSlotSuccess,   this);
-    this.game.events.off('rk_slot_invalid',  this._onSlotInvalid,   this);
-    this.game.events.off('rk_action_unlock', this._onActionUnlock,  this);
+    this.game.events.off('rk_beat',           this._onBeat,          this);
+    this.game.events.off('rk_player_dead',    this._onPlayerDead,    this);
+    this.game.events.off('rk_level_complete', this._onLevelComplete, this);
+    this.game.events.off('rk_slot_success',   this._onSlotSuccess,   this);
+    this.game.events.off('rk_slot_invalid',   this._onSlotInvalid,   this);
+    this.game.events.off('rk_action_unlock',  this._onActionUnlock,  this);
+    this.game.events.off('rk_timeline_clear', this._onTimelineClear, this);
     this._pulseRect = null;
     this._pulseAlpha = 0;
   }
