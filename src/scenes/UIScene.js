@@ -9,13 +9,14 @@ class UIScene extends Phaser.Scene {
   init(data) {
     this.timeline         = (data && data.timeline) || new RK.Timeline();
     this.currentBeat      = 0;
-    this._unlockedActions = ['JUMP', 'ROLL'];
+    this._levelKey  = (data && data.levelKey) || 'level1';
+    const _ld = RK.Levels[this._levelKey];
+    this._unlockedActions = (_ld && _ld.unlockedActions) ? _ld.unlockedActions.slice() : ['JUMP', 'ROLL'];
     // Restore session values
     const sess = window.RK && window.RK._session;
     this._activeBeatCount   = (sess && sess.beatCount)    || RK.BEAT_COUNT;
     this._savedTrackIndex   = (sess && sess.trackIndex)   || 1;
     this._savedVariantIndex = (sess && sess.variantIndex !== undefined) ? sess.variantIndex : 0;
-    this._levelKey  = (data && data.levelKey) || 'level1';
     const m = this._levelKey.match(/\d+/);
     this._levelNum  = m ? parseInt(m[0]) : 1;
     this._levelName = (RK.Levels[this._levelKey] && RK.Levels[this._levelKey].name) || '';
