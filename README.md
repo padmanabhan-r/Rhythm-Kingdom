@@ -5,7 +5,7 @@
 > **ElevenHacks Hackathon** — A split-controller rhythm arcade game. You handle movement. The beat handles everything else.
 
 [![Play](https://img.shields.io/badge/Play-rhythm--kingdom.pages.dev-brightgreen?style=flat-square&logo=googlechrome&logoColor=white)](https://rhythm-kingdom.pages.dev)
-[![ElevenLabs](https://img.shields.io/badge/ElevenLabs-Sound%20Effects%20%2B%20Music-FF6B35?style=flat-square&logoColor=white)](https://elevenlabs.io)
+[![ElevenLabs](https://img.shields.io/badge/ElevenLabs-Sound%20Effects%20%2B%20Music%20%2B%20TTS-FF6B35?style=flat-square&logoColor=white)](https://elevenlabs.io)
 [![Phaser](https://img.shields.io/badge/Phaser-3.60-blueviolet?style=flat-square&logoColor=white)](https://phaser.io)
 [![Web Audio](https://img.shields.io/badge/Web%20Audio%20API-sample--accurate-orange?style=flat-square&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)
 [![Vanilla JS](https://img.shields.io/badge/Vanilla%20JS-ES6-yellow?style=flat-square&logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
