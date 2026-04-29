@@ -1,5 +1,25 @@
 # Changelog
 
+## v1.2.0 — Level 2 Redesign & Build Cleanup (2026-04-29)
+
+### Levels
+- Fixed invisible pit at x:1300 in level 2 by moving main platform start from x:1400 to x:1300
+- Redesigned level 2 end section: replaced flat run-out with a 3-tier staircase up to a raised temple platform
+- Raised level 2 exit from y:360 to y:240 on new temple platform (y:260)
+- Adjusted banana collectible positions to match new platform layout
+
+### Systems
+- Added `buildDecorations()` to `GameSceneBuilder` — renders background image props from level data `decorations` array
+- Loaded `temple_1` and `temple_2` sprites in `BootScene`; temple_1 placed as background decoration at level 2 start
+
+### Chore
+- Removed leftover `main.py` placeholder stub
+
+### Docs
+- Updated README with hackathon narrative tone and fixed badge link
+
+---
+
 ## v1.1.0 — Voice & Jungle SFX Update (2026-04-29)
 
 ### Audio
