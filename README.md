@@ -99,7 +99,8 @@ COCONUT — throws a spinning coconut that kills enemies on impact
 |----------|-----------|
 | **Game Engine** | Phaser 3.60 — WebGL/Canvas, arcade physics, CDN-loaded |
 | **Audio** | Web Audio API — sample-accurate scheduling, synth fallbacks |
-| **Sound Generation** | ElevenLabs Sound Effects API (`eleven_text_to_sound_v2`) |
+| **Sound Generation** | ElevenLabs Sound Effects API (`eleven_text_to_sound_v2`) — jungle-themed SFX |
+| **Voice-overs** | ElevenLabs TTS (`eleven_multilingual_v2`) — title, level names, win screen |
 | **Music Generation** | ElevenLabs Music API (`music.compose`) |
 | **Language** | Vanilla JS ES6 — no bundler, no TypeScript, `window.RK` namespace |
 | **Fonts** | Cinzel Decorative + Press Start 2P — self-hosted woff2 |
@@ -155,7 +156,12 @@ Audio files are pre-generated and committed. Regenerate only if you want new ste
 
 ```bash
 pip install elevenlabs
+
+# SFX and music stems
 ELEVENLABS_API_KEY=your_key python3 generate_audio.py
+
+# Voice-overs (title, level names, win screen)
+ELEVENLABS_API_KEY=your_key python3 generate_voiceovers.py
 ```
 
 > Game runs without WAV/MP3 files — AudioManager synth fallbacks cover every key.
@@ -173,11 +179,12 @@ ELEVENLABS_API_KEY=your_key python3 generate_audio.py
 
 | Product | Usage |
 |---------|-------|
-| **Sound Effects API** | Generated all 17 game SFX — jump, roll, coconut throw, hit, death, checkpoint, level complete, ambient jungle sounds |
+| **Sound Effects API** | Generated all game SFX — jungle roll, coconut hurl, hit, death, checkpoint, level complete, ambient jungle sounds |
 | **Music API** | 6 backing tracks: Chill / Groove / Intense × 2 variants (A/B) — African jungle drum compositions at 120 BPM |
 | **Text-to-Sound** | Menu music — wild African jungle ambience with monkey calls, djembe percussion, dundun bass |
+| **Text-to-Speech** | 5 voice-overs: "Rhythm Kingdom" on tap-to-begin, level name announcements (1–3), and win-screen line |
 
-All audio generated with `eleven_text_to_sound_v2`. Prompts use audio terminology: `one-shot`, `loop`, `stem`, `120 BPM`, `African jungle`, `djembe`, `dundun`, `seamless loop`.
+SFX generated with `eleven_text_to_sound_v2`. Voice-overs use `eleven_multilingual_v2` (voice `oRHa7giAMnOuk9e9YaM3`). Prompts use audio terminology: `one-shot`, `loop`, `stem`, `120 BPM`, `African jungle`, `djembe`, `dundun`, `seamless loop`.
 
 ---
 

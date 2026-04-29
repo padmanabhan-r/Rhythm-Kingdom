@@ -1,5 +1,21 @@
 # Changelog
 
+## v1.1.0 — Voice & Jungle SFX Update (2026-04-29)
+
+### Audio
+- 5 ElevenLabs TTS voice-overs (voice `oRHa7giAMnOuk9e9YaM3`, `eleven_multilingual_v2`):
+  - "Rhythm Kingdom" — plays 500ms after tap-to-begin
+  - "Level 1: The Root Gate", "Level 2: Temple of Echoes", "Level 3: Canopy Heart" — on level start
+  - "You got the rhythm. The jungle bows to the beat." — on win screen
+- Replaced roll SFX with jungle-themed organic tumble (roll_v3, volume 0.4)
+- Replaced coconut throw SFX with jungle hurl sound (coconut_v4)
+
+### Fixes
+- Fixed "Rhythm Kingdom" voice playing twice: removed duplicate dismiss listener in MenuScene
+- Fixed level 2 invisible pit near exit gate: split 1000px platform into two overlapping segments
+
+---
+
 ## v1.0.0 — ElevenHacks Release (2026-04-27)
 
 First public release of **Rhythm Kingdom** — a split-controller action-puzzle platformer built for the ElevenHacks hackathon.
