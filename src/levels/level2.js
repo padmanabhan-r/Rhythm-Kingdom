@@ -19,7 +19,8 @@ window.RK.Levels.level2 = {
     { x: 660,  y: 320, w: 200, type: 'jungle' },
     { x: 900,  y: 380, w: 200, type: 'jungle' },
     { x: 1100, y: 300, w: 200, type: 'jungle' },
-    { x: 1400, y: 380, w: 1000, type: 'jungle' },
+    { x: 1400, y: 380, w: 700,  type: 'jungle' },
+    { x: 2050, y: 380, w: 350,  type: 'jungle' },
     { x: 1800, y: 320, w: 400,  type: 'jungle' },
   ],
 

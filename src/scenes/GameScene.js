@@ -80,6 +80,9 @@ class GameScene extends Phaser.Scene {
     this._audio._ensureCtx();
     this._rhythmClock.start();
 
+    const voKey = { level1: 'vo_level1', level2: 'vo_level2', level3: 'vo_level3' }[this.levelKey];
+    if (voKey) this.time.delayedCall(300, () => this._audio.play(voKey, 1.0));
+
     this.cursors = this.input.keyboard.addKeys({
       left:      Phaser.Input.Keyboard.KeyCodes.A,
       right:     Phaser.Input.Keyboard.KeyCodes.D,
@@ -383,8 +386,9 @@ class GameScene extends Phaser.Scene {
     }
 
 
-    const SFX = { JUMP: 'jump', ROLL: 'roll', COCONUT: 'coconut_throw' };
-    this._audio.play(SFX[action], 1.0);
+    const SFX = { JUMP: 'jump', ROLL: 'roll_v3', COCONUT: 'coconut_v4' };
+    const VOL = { ROLL: 0.4 };
+    this._audio.play(SFX[action], VOL[action] || 1.0);
     this.game.events.emit('rk_slot_success', beatIndex);
 
     switch (action) {
@@ -562,6 +566,7 @@ _onPlayerLand(data) { this._gameFeel.dustBurst(data.x, data.y + 14); }
   }
 
   _showWinScreen() {
+    this._audio.play('vo_win', 1.0);
     if (this._completeBanner) { this._completeBanner.destroy(); this._completeBanner = null; }
     const W = RK.WIDTH, H = RK.PLAY_HEIGHT;
     this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.85).setDepth(28).setScrollFactor(0);

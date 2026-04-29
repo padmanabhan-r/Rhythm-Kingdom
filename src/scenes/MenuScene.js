@@ -315,7 +315,11 @@ class MenuScene extends Phaser.Scene {
     });
 
     const dismiss = () => {
+      overlay.off('pointerdown', dismiss);
+      this.input.keyboard.off('keydown', dismiss);
       this._startMenuMusic();
+      const a = window.RK && window.RK._audio;
+      if (a) this.time.delayedCall(500, () => a.play('vo_title', 1.0));
       this.tweens.add({
         targets: [overlay, txt, sub], alpha: 0, duration: 400,
         onComplete: () => { overlay.destroy(); txt.destroy(); sub.destroy(); },

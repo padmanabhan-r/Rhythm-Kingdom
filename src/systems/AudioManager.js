@@ -26,10 +26,11 @@ window.RK.AudioManager = class AudioManager {
     const keys = [
       'backing_loop_chill', 'backing_loop', 'backing_loop_intense', 'menu_loop',
       'backing_loop_chill_2', 'backing_loop_2', 'backing_loop_intense_2',
-      'jump', 'roll', 'coconut_throw', 'coconut_impact', 'punch',
+      'jump', 'roll', 'roll_v3', 'coconut_throw', 'coconut_v4', 'coconut_impact', 'punch',
       'unlock_action', 'checkpoint',
       'invalid_beat', 'hit', 'death', 'level_complete',
       'chatter', 'hoot', 'monkey', 'bird', 'thunder',
+      'vo_title', 'vo_level1', 'vo_level2', 'vo_level3', 'vo_win',
     ];
     const loads = keys.map(async (key) => {
       try {
