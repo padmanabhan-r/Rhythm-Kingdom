@@ -64,6 +64,7 @@ class GameScene extends Phaser.Scene {
     RK.GameSceneBuilder.buildSigns(this, ld);
     RK.GameSceneBuilder.buildCheckpoints(this, ld);
     RK.GameSceneBuilder.buildExit(this, ld);
+    RK.GameSceneBuilder.buildDecorations(this, ld);
 
     this._gameFeel = new RK.GameFeel(this);
 

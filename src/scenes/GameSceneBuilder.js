@@ -192,6 +192,15 @@ window.RK.GameSceneBuilder = {
     });
   },
 
+  buildDecorations(scene, ld) {
+    (ld.decorations || []).forEach(d => {
+      scene.add.image(d.x, d.y, d.key)
+        .setDepth(d.depth ?? 0)
+        .setScale(d.scale ?? 1)
+        .setOrigin(d.originX ?? 0.5, d.originY ?? 0.5);
+    });
+  },
+
   buildExit(scene, ld) {
     const ex = ld.exit;
     scene.add.image(ex.x + 24, ex.y - 28, 'exit_arch').setDepth(2);
