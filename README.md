@@ -1,8 +1,8 @@
 # Rhythm Kingdom
 
-**Movement is manual. Actions are rhythm-locked. Power-ups unlock new notes in the loop.**
+**Meet the monkey who can't stop dancing.**
 
-> **ElevenHacks Hackathon** — A browser-based action-platformer where the beat drives everything.
+> **ElevenHacks Hackathon** — A split-controller rhythm arcade game. You handle movement. The beat handles everything else.
 
 [![Play](https://img.shields.io/badge/Play-rhythm--kingdom.pages.dev-brightgreen?style=flat-square&logo=googlechrome&logoColor=white)](https://rhythm-kingdom.pages.dev)
 [![ElevenLabs](https://img.shields.io/badge/ElevenLabs-Sound%20Effects%20%2B%20Music-FF6B35?style=flat-square&logoColor=white)](https://elevenlabs.io)
@@ -12,9 +12,13 @@
 [![Cloudflare Pages](https://img.shields.io/badge/Cloudflare-Pages-F38020?style=flat-square&logo=cloudflare&logoColor=white)](https://pages.cloudflare.com)
 [![ElevenHacks](https://img.shields.io/badge/Built%20for-ElevenHacks-FF6B35?style=flat-square&logoColor=white)](https://elevenlabs.io)
 
-> You move the monkey. The runes move the world.
+> He's been dancing since before you got here — maracas shaking, feet locked to the beat.
 >
-> Place action runes into beat wells. They fire on the rhythm — jump over water, roll under gaps, throw coconuts at enemies. Every successful action plays an ElevenLabs-generated stem. The soundtrack evolves as you unlock power.
+> You can move him. You can't control what he does next.
+>
+> Eight beats. Eight slots. Drop runes. On the beat, they fire — ready or not.
+>
+> Jump. Roll. Throw. Miss the timing and you die.
 
 <p align="center">
   <img src="cover-art.png" alt="Rhythm Kingdom — A Monkey's Rhythm Journey" width="800" />
@@ -38,11 +42,19 @@
 
 ## What is Rhythm Kingdom?
 
-Rhythm Kingdom is a **split-controller action-puzzle platformer** built entirely in the browser — no backend, no bundler, no build step.
+Split-controller rhythm arcade game — entirely in the browser. No backend. No bundler. No build step.
 
-You control the monkey manually with A/D or arrow keys. But jumps, rolls, and coconut throws only happen on the beat — placed as runes in a sequencer panel at the top of the screen. Stack two JUMP runes for a double jump. Chain ROLL into a gap. Time your coconut throw to hit a snake mid-patrol.
+You move the monkey with A/D or arrow keys. But jumps, rolls, and coconut throws only happen on the beat — placed as runes in a sequencer panel at the top of the screen.
 
-The ElevenLabs Sound Effects API generated every audio stem in the game — African percussion, ambient jungle sounds, action SFX, and three full backing tracks (Chill, Groove, Intense).
+The screen shakes to the beat. Lights pulse. Every action triggers its own audio stem. When it all locks in, it's not just gameplay — it's a performance.
+
+Stack two JUMP runes for a double jump. Chain ROLL into a gap. Time your coconut throw to hit a snake mid-patrol.
+
+All audio — percussion, bass, jungle textures, animal sounds, voice-overs — generated using ElevenLabs Sound Effects, Music, and TTS APIs. Layered to build the atmosphere. Locked to tempo.
+
+You lose the rhythm. You die. You try again.
+
+**Place the rune. Hit the beat. Don't fall behind.**
 
 ---
 
@@ -201,5 +213,6 @@ This project is licensed under the [MIT License](https://opensource.org/licenses
 ---
 
 <p align="center">
-  <i>Powered by the Rhythm of ElevenLabs &nbsp;|&nbsp; Developed using Zed</i>
+  <i>Powered by ElevenLabs &nbsp;|&nbsp; Built with Zed</i><br/>
+  <i>Control the rhythm. Command the chaos.</i>
 </p>
