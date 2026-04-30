@@ -36,7 +36,7 @@ window.RK.Levels.level1 = {
     // [WATER PIT 3: x=1220-1420, 200px]
 
     // ——— Section 3: Long approach ———
-    { x: 1420, y: 498, w: 760,  type: 'jungle' },  // x=1420-2180
+    { x: 1420, y: 498, w: 780,  type: 'jungle' },  // x=1420-2200
     // Elevated platforms in long section
     { x: 1480, y: 370, w: 120,  type: 'jungle' },
     { x: 1720, y: 340, w: 140,  type: 'jungle' },

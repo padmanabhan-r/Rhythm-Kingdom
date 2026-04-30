@@ -114,7 +114,7 @@ window.RK.Player = class Player extends Phaser.Physics.Arcade.Sprite {
     this.rollTimer = 300;
     // Shrink hitbox for roll
     this.body.setSize(RK.ROLL_W, RK.ROLL_H);
-    this.body.setOffset((28 - RK.ROLL_W) / 2, 36 - RK.ROLL_H);
+    this.body.setOffset((28 - RK.ROLL_W) / 2, 40 - RK.ROLL_H);
     // Burst in facing direction
     const dir = this.facingRight ? 1 : -1;
     this.body.setVelocityX(dir * RK.PLAYER_SPEED * 1.8);
