@@ -42,7 +42,7 @@
 
 ## What is Rhythm Kingdom?
 
-Split-controller rhythm arcade game — entirely in the browser. No backend. No bundler. No build step.
+Split-control rhythm arcade game — entirely in the browser. No backend. No bundler. No build step.
 
 You move the monkey with A/D or arrow keys. But jumps, rolls, and coconut throws only happen on the beat — placed as runes in a sequencer panel at the top of the screen.
 
