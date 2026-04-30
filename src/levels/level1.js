@@ -14,6 +14,7 @@ window.RK.Levels.level1 = {
   nextLevel: 'level2',
   playerStart: { x: 80, y: 462 },
   unlockedActions: ['JUMP', 'ROLL'],
+  music: { trackIndex: 1, variantIndex: 0 },
 
   platforms: [
     // ——— Section 1: Intro path ———

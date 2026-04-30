@@ -76,7 +76,10 @@ class GameScene extends Phaser.Scene {
     this._buildHUD(ld);
     this._bindEvents();
 
-    const loopKey = (window.RK._session && window.RK._session.trackKey) || ld.loopKey || 'backing_loop';
+    const _trackKeys = ['backing_loop_chill', 'backing_loop', 'backing_loop_intense'];
+    const _lm = ld.music || {};
+    const _base = _trackKeys[_lm.trackIndex !== undefined ? _lm.trackIndex : 1] || 'backing_loop';
+    const loopKey = _lm.variantIndex === 1 ? _base + '_2' : _base;
     this._rhythmClock = new RK.RhythmClock(this._audio, this.game.events, loopKey);
     this._audio._ensureCtx();
     this._rhythmClock.start();

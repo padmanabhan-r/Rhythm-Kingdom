@@ -12,6 +12,7 @@ window.RK.Levels.level2 = {
   nextLevel: 'level3',
   playerStart: { x: 80, y: 410 },
   unlockedActions: ['JUMP', 'ROLL'],
+  music: { trackIndex: 1, variantIndex: 1 },
 
   platforms: [
     { x: 0,    y: 440, w: 300, type: 'jungle' },

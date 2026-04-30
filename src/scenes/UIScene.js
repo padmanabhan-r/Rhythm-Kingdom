@@ -15,8 +15,9 @@ class UIScene extends Phaser.Scene {
     // Restore session values
     const sess = window.RK && window.RK._session;
     this._activeBeatCount   = (sess && sess.beatCount)    || RK.BEAT_COUNT;
-    this._savedTrackIndex   = (sess && sess.trackIndex)   || 1;
-    this._savedVariantIndex = (sess && sess.variantIndex !== undefined) ? sess.variantIndex : 0;
+    const lvMusic = (_ld && _ld.music) || {};
+    this._savedTrackIndex   = lvMusic.trackIndex   !== undefined ? lvMusic.trackIndex   : 1;
+    this._savedVariantIndex = lvMusic.variantIndex !== undefined ? lvMusic.variantIndex : 0;
     const m = this._levelKey.match(/\d+/);
     this._levelNum  = m ? parseInt(m[0]) : 1;
     this._levelName = (RK.Levels[this._levelKey] && RK.Levels[this._levelKey].name) || '';
@@ -186,25 +187,27 @@ class UIScene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(6).setScrollFactor(0);
 
     // Info panel
-    const pw = 400, ph = 170, pcx = RK.WIDTH - 225, pcy = RK.UI_HEIGHT + 98;
+    const pw = 400, ph = 220, pcx = RK.WIDTH - 225, pcy = RK.UI_HEIGHT + 98;
     this._infoBg = this.add.rectangle(pcx, pcy, pw, ph, 0x080e18, 0.96)
       .setDepth(30).setAlpha(0).setStrokeStyle(2, 0x44aaff).setScrollFactor(0);
 
     const lines = [
-      { t: '— HOW TO PLAY —',                   c: '#44aaff', s: '10px', b: true },
-      { t: '▸ 2 runes unlocked by default',      c: '#ffee88', s: '9px'  },
-      { t: '▸ Unlock more as you progress further', c: '#ffee88', s: '9px' },
-      { t: '▸ Stack 2 JUMP runes → double jump', c: '#44ffaa', s: '9px'  },
-      { t: '▸ Place runes in the right slots',   c: '#44ffaa', s: '9px'  },
-      { t: '▸ Time your actions to the beat',    c: '#44ffaa', s: '9px'  },
-      { t: '▸ A / D  or  ← / →  to move',       c: '#ccaa55', s: '9px'  },
-      { t: '▸ Avoid snakes — instant death!',    c: '#ff6644', s: '9px'  },
-      { t: 'Click anywhere to close',            c: '#445566', s: '8px'  },
+      { t: '— HOW TO PLAY —',                          c: '#44aaff', s: '10px', b: true },
+      { t: '▸ 2 runes unlocked by default',             c: '#ffee88', s: '9px'  },
+      { t: '▸ Unlock more as you progress further',     c: '#ffee88', s: '9px'  },
+      { t: '▸ Stack 2 JUMP runes → double jump',        c: '#44ffaa', s: '9px'  },
+      { t: '▸ Place runes in the right slots',          c: '#44ffaa', s: '9px'  },
+      { t: '▸ Time your actions to the beat',           c: '#44ffaa', s: '9px'  },
+      { t: '▸ A / D  or  ← / →  to move',              c: '#ccaa55', s: '9px'  },
+      { t: '▸ ROLL into enemies to kill them',          c: '#44ddff', s: '9px'  },
+      { t: '▸ Throw COCONUT at enemies after unlocking',c: '#44ddff', s: '9px'  },
+      { t: '▸ Avoid snakes — instant death!',           c: '#ff6644', s: '9px'  },
+      { t: 'Click anywhere to close',                   c: '#445566', s: '8px'  },
     ];
 
     this._infoObjs = [this._infoBg];
     lines.forEach((l, i) => {
-      const txt = this.add.text(pcx, pcy - 68 + i * 18, l.t, {
+      const txt = this.add.text(pcx, pcy - 90 + i * 18, l.t, {
         fontSize: l.s, color: l.c, fontFamily: 'monospace',
         fontStyle: l.b ? 'bold' : 'normal',
       }).setOrigin(0.5).setDepth(31).setAlpha(0).setScrollFactor(0);
