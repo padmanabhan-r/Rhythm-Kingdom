@@ -2,7 +2,7 @@
 
 **Meet the monkey who can't stop dancing.**
 
-> **ElevenHacks Hackathon** — A split-controller rhythm arcade game. You handle movement. The beat handles everything else.
+> **ElevenHacks Hackathon** — A split control rhythm arcade game. You handle movement. The beat handles everything else.
 
 [![Play](https://img.shields.io/badge/Play-rhythm--kingdom.pages.dev-brightgreen?style=flat-square&logo=googlechrome&logoColor=white)](https://rhythm-kingdom.pages.dev)
 [![ElevenLabs](https://img.shields.io/badge/ElevenLabs-Sound%20Effects%20%2B%20Music%20%2B%20TTS-FF6B35?style=flat-square&logoColor=white)](https://elevenlabs.io)

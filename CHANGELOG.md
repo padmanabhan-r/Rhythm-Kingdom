@@ -47,7 +47,7 @@
 
 ## v1.0.0 — ElevenHacks Release (2026-04-27)
 
-First public release of **Rhythm Kingdom** — a split-controller action-puzzle platformer built for the ElevenHacks hackathon.
+First public release of **Rhythm Kingdom** — a split control rhythm arcade game built for the ElevenHacks hackathon.
 
 ### Gameplay
 - 3 levels: First Loop → Heavy Beat → Final Track
