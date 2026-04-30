@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.3.0 — Under Pressure (2026-04-30)
+
+### Fixes
+- Fixed invisible pit at gate pillar in level 1 where ROLL was required: two compounding bugs
+  - **Roll body offset off by 4px** (`Player.js`): `36 - ROLL_H` → `40 - ROLL_H`. Roll hitbox now aligns with floor surface, keeping the player grounded during roll and clearing the pillar wall bottom by 4px instead of touching it exactly
+  - **20px floor gap after gate** (`level1.js`): section 3 platform extended from `w:760` to `w:780`, closing the physics gap between x=2180 and x=2200
+
+---
+
 ## v1.2.0 — Level 2 Redesign & Build Cleanup (2026-04-29)
 
 ### Levels
