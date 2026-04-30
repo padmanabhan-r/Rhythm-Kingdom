@@ -44,9 +44,9 @@
 
 Split-control rhythm arcade game — entirely in the browser. No backend. No bundler. No build step.
 
-You move the monkey with A/D or arrow keys. But jumps, rolls, and coconut throws only happen on the beat — placed as runes in a sequencer panel at the top of the screen.
+You move the monkey with A/D or arrow keys. But jumps, rolls, and coconut throws only happen on the beat — placed as action runes in a sequencer panel at the top of the screen.
 
-The screen shakes to the beat. Lights pulse. Every action triggers its own audio stem. When it all locks in, it's not just gameplay — it's a performance.
+The screen shakes to the beat. Lights pulse. Every action triggers its own audio stem. All locked to tempo — everything perfectly synced, nothing out of time, in a single flow. When it all locks in, it's not just gameplay — it's a performance.
 
 Stack two JUMP runes for a double jump. Chain ROLL into a gap. Time your coconut throw to hit a snake mid-patrol.
 
@@ -60,9 +60,9 @@ You lose the rhythm. You die. You try again.
 
 ## How It Works
 
-**1. Place Runes** — Click the beat wells at the top of the screen to cycle through available runes (JUMP, ROLL, COCONUT). Each well corresponds to a beat in the loop.
+**1. Place Runes** — Click the beat slots at the top of the screen to cycle through available runes (JUMP, ROLL, COCONUT). Each slot corresponds to a beat in the loop.
 
-**2. The Beat Fires** — At 120 BPM, the sequencer advances through your wells. When it hits a filled slot, the action executes — no button press needed.
+**2. The Beat Fires** — At 120 BPM, the sequencer advances through your slots. When it hits a filled slot, the action executes — no button press needed.
 
 **3. Move Freely** — Use A/D or ← / → to move the monkey left and right at any time. Timing the movement with your rune placement is the core skill.
 
@@ -76,13 +76,13 @@ You lose the rhythm. You die. You try again.
 
 | Feature | Description |
 |---------|-------------|
-| **Rune Sequencer** | 2–8 configurable beat wells — place and cycle runes to schedule actions |
-| **Double Jump** | Stack JUMP in two consecutive wells for a higher arc — max 2 in a row |
+| **Rune Sequencer** | 2–8 configurable beat slots — place and cycle runes to schedule actions |
+| **Double Jump** | Stack JUMP in two consecutive slots for a higher arc — max 2 in a row |
 | **Party Lights** | Full-screen colour pulse on every beat — white, red, yellow, green cycling |
 | **Fruit Collectibles** | Melons scattered on elevated platforms — collect for score |
 | **Enemy System** | Snakes, lizards, bats, and stone guardians — each killed differently. Touch = instant death + restart |
 | **6 Music Variants** | 3 tracks (Chill / Groove / Intense) × 2 variants each (A/B) — switch anytime via gear ⚙ menu |
-| **Session Persistence** | Well count and music track survive death and level transitions |
+| **Session Persistence** | slot count and music track survive death and level transitions |
 | **Tutorial Overlays** | Contextual hints appear as you reach key moments — dismiss with E |
 | **Procedural Art** | Player, enemies, and UI sprites generated at runtime via Phaser Graphics — parallax, water, fruits, and snakes use real image assets from the jungle asset pack |
 
@@ -101,7 +101,7 @@ COCONUT — throws a spinning coconut that kills enemies on impact
 - **Level 2 — Temple of Echoes:** + COCONUT (collect rune shard)
 - **Level 3 — Canopy Heart:** All runes active
 
-**Double jump:** Place JUMP in two consecutive wells. Second JUMP fires in the air with higher force. Three consecutive JUMPs blocked — max 2.
+**Double jump:** Place JUMP in two consecutive slots. Second JUMP fires in the air with higher force. Three consecutive JUMPs blocked — max 2.
 
 ---
 
@@ -117,7 +117,6 @@ COCONUT — throws a spinning coconut that kills enemies on impact
 | **Language** | Vanilla JS ES6 — no bundler, no TypeScript, `window.RK` namespace |
 | **Fonts** | Cinzel Decorative + Press Start 2P — self-hosted woff2 |
 | **Deploy** | Cloudflare Pages — static, unlimited bandwidth |
-| **Audio Script** | Python 3 + ElevenLabs SDK (`generate_audio.py`) |
 
 ---
 
@@ -130,17 +129,17 @@ COCONUT — throws a spinning coconut that kills enemies on impact
 
 **Level 1 — Jungle Platforming**
 <p align="center">
-  <img src="images/screenshot-level1.png" alt="Level 1 gameplay — monkey on floating jungle platform, 8 octagonal beat wells at top with JUMP/ROLL/COCONUT runes, fruit collectibles, water below" width="700" />
+  <img src="images/screenshot-level1.png" alt="Level 1 gameplay — monkey on floating jungle platform, 8 octagonal beat slots at top with JUMP/ROLL/COCONUT runes, fruit collectibles, water below" width="700" />
 </p>
 
 **Rune Tutorial — Rolling Under the Gap**
 <p align="center">
-  <img src="images/screenshot-wells.png" alt="Tutorial overlay: Place a ROLL rune — monkey sliding under a tall standing pillar" width="700" />
+  <img src="images/screenshot-slots.png" alt="Tutorial overlay: Place a ROLL rune — monkey sliding under a tall standing pillar" width="700" />
 </p>
 
 **Mid-Air — Jump + Coconut Throw**
 <p align="center">
-  <img src="images/screenshot-doublejump.png" alt="Monkey mid-air above jungle platforms, all 8 beat wells filled, coconut projectile in flight" width="700" />
+  <img src="images/screenshot-doublejump.png" alt="Monkey mid-air above jungle platforms, all 8 beat slots filled, coconut projectile in flight" width="700" />
 </p>
 
 ---
