@@ -200,6 +200,20 @@ SFX generated with `eleven_text_to_sound_v2`. Voice-overs use `eleven_multilingu
 
 ---
 
+## What's Next
+
+Rhythm Kingdom launched as a hackathon project — but there's more to come.
+
+| Incoming | Description |
+|----------|-------------|
+| **More Levels** | New biomes, harder platforming, fresh enemy patterns |
+| **More Challenges** | Speed runs, no-death modes, hidden rune caches |
+| **More Actions** | New runes beyond JUMP / ROLL / COCONUT — more ways to fight, move, and groove |
+| **Leaderboard** | Global high scores — fastest clear times, most fruit, longest streak without dying |
+| **Chaos Beat** | The environment occasionally injects a wildcard rune into your sequencer — a forced Roll or Taunt you didn't place. Move the monkey into position so the "mistake" works in your favor |
+
+---
+
 ## License
 
 <p>
